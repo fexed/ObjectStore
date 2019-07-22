@@ -32,10 +32,10 @@ void cleanupserver() {
 
 static void signalHandler(int signum) {
 	if (signum == SIGUSR1) {
-		printf("***SERVER INFO***\nClient connessi\t\t%d\nOggetti memorizzati\t\t%d\nDimensione store\t\t%d", clientConnessi, oggettiMemorizzati, storeTotalSize);
+		//TODO fix
+	} else if (signum == SIGPIPE) {
 	} else {
-		//cleanupserver();
-		exit(EXIT_SUCCESS);
+		exit(signum);
 	}
 }
 
@@ -45,6 +45,7 @@ int startupserver() {
 	s.sa_handler = signalHandler;
 	retval = sigaction(SIGUSR1, &s, NULL);
 	retval = sigaction(SIGINT, &s, NULL);
+	retval = sigaction(SIGPIPE, &s, NULL);
 	if (retval != 0) return retval;
 	
 	strncpy(skta.sun_path, SOCKETNAME, UNIX_PATH_MAX);
@@ -93,6 +94,7 @@ static void* clientHandler(void *arg) {
 	} while(1); //TODO fix
 
 	close(clientskt);
+	pthread_exit(NULL);
 }
 
 int main (int argc, char *argv[]) {
@@ -106,7 +108,7 @@ int main (int argc, char *argv[]) {
 		sktAccepted = accept(skt, NULL, 0);
 		for (i = 0; i < MAXTHREADS; i++) {
 			//TODO check thread vuoto
-			retval = pthread_create(&threadpool[i], NULL, *clientHandler, sktAccepted);
+			retval = pthread_create(&threadpool[i], NULL, *clientHandler, (void *)sktAccepted);
 			break;
 		}
 	} while(1); //TODO fix

@@ -44,4 +44,5 @@ int os_delete(char *name);
 int os_disconnect() {
 	write(skt, "LEAVE\n", 7);
 	close(skt);
+	return 0;
 }
