@@ -32,7 +32,7 @@ void cleanupserver() {
 
 static void signalHandler(int signum) {
 	if (signum == SIGUSR1) {
-		//TODO: info server in output
+		printf("***SERVER INFO***\nClient connessi\t\t%d\nOggetti memorizzati\t\t%d\nDimensione store\t\t%d", clientConnessi, oggettiMemorizzati, storeTotalSize);
 	} else {
 		//cleanupserver();
 		exit(EXIT_SUCCESS);
@@ -80,12 +80,15 @@ static void* clientHandler(void *arg) {
 
 	read(clientskt, buff, BUFFSIZE);
 	printf("%s", buff);
-	write(clientskt, "0", 2);
+	write(clientskt, "OK\n", 4);
 	incrementaClientConnessi();
-	
+
 	do {
 		read(clientskt, buff, BUFFSIZE);
-		if (strcmp(buff, "LEAVE\n") == 0) break;
+		if (strcmp(buff, "LEAVE\n") == 0) {
+			write(clientskt, "OK\n", 4);
+			break;
+		}
 		else printf("%s\n", buff);
 	} while(1); //TODO fix
 
