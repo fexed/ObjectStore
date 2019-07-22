@@ -22,20 +22,27 @@ struct sockaddr_un skta;
 struct sigaction s;
 int skt;
 
-static void gest_SIGUSR1(int signum) {
-	//TODO: info server in output
-}
-
 void cleanupserver() {
 	close(skt);
 	unlink(SOCKETNAME);
 }
 
+static void signalHandler(int signum) {
+	if (signum == SIGUSR1) {
+
+	} else {
+		//cleanupserver();
+		exit(EXIT_SUCCESS);
+	}
+	//TODO: info server in output
+}
+
 int startupserver() {
 	int retval;
 	memset(&s, 0, sizeof(s));
-	s.sa_handler = gest_SIGUSR1;
+	s.sa_handler = signalHandler;
 	retval = sigaction(SIGUSR1, &s, NULL);
+	retval = sigaction(SIGINT, &s, NULL);
 	if (retval != 0) return retval;
 	
 	strncpy(skta.sun_path, SOCKETNAME, UNIX_PATH_MAX);
