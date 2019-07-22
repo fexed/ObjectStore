@@ -3,7 +3,6 @@
 #include <stdio.h>
 
 int os_connect(char *name){
-	printf("Connessione: %s\n", name);
 	return true;
 }
 

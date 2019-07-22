@@ -10,4 +10,4 @@ all :
 	$(CC) $(CFLAGS) server.c $(LDFLAGS) -o server
 
 clean :
-	rm -f filetolist libList.a libList.o
+	rm -f client server libclient.a libclient.o
