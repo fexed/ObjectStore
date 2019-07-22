@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <signal.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -25,7 +26,12 @@ static void gest_SIGUSR1(int signum) {
 	//TODO: info server in output
 }
 
-int setupserver() {
+void cleanupserver() {
+	close(skt);
+	unlink(SOCKETNAME);
+}
+
+int startupserver() {
 	int retval;
 	memset(&s, 0, sizeof(s));
 	s.sa_handler = gest_SIGUSR1;
@@ -38,6 +44,8 @@ int setupserver() {
 	retval = bind(skt, (struct sockaddr *)&skta, sizeof(skta));
 	if (retval != 0) return retval;
 
+	atexit(cleanupserver);
+
 	clientConnessi = 0;
 	oggettiMemorizzati = 0;
 	storeTotalSize = 0;
@@ -48,7 +56,7 @@ int setupserver() {
 int main (int argc, char *argv[]) {
 	int retval;
 
-	retval = setupserver();
+	retval = startupserver();
 	CHECK_RETVAL(retval, "Server setup");
 
 	return 0;
