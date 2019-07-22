@@ -41,4 +41,7 @@ void *os_retrieve(char *name);
 
 int os_delete(char *name);
 
-int os_disconnect();
+int os_disconnect() {
+	write(skt, "LEAVE\n", 6);
+	close(skt);
+}
