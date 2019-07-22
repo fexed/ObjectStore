@@ -2,6 +2,8 @@
 #define true 0
 #define false 1
 #define SOCKETNAME "./objectstore_530257"
+#define BUFFSIZE 100
+#define UNIX_PATH_MAX 108
 
 int os_connect(char *name); //Connette con username name. true se OK, false altrimenti
 
