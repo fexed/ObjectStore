@@ -18,10 +18,11 @@
 		}
 
 int clientConnessi, oggettiMemorizzati, storeTotalSize;
-pthread_t threadpool[MAXTHREADS];
+int skt, sktAccepted;
 struct sockaddr_un skta;
 struct sigaction s;
-int skt, sktAccepted;
+pthread_t threadpool[MAXTHREADS];
+static pthread_mutex_t clientConnessiMutex = PTHREAD_MUTEX_INITIALIZER;
 
 void cleanupserver() {
 	close(skt);
@@ -61,6 +62,18 @@ int startupserver() {
 	return retval;
 }
 
+void incrementaClientConnessi() {
+	pthread_mutex_lock(&clientConnessiMutex);
+	clientConnessi++;
+	pthread_mutex_unlock(&clientConnessiMutex);
+}
+
+void decrementaClientConnessi() {
+	pthread_mutex_lock(&clientConnessiMutex);
+	clientConnessi--;
+	pthread_mutex_unlock(&clientConnessiMutex);
+}
+
 static void* clientHandler(void *arg) {
 	int clientskt = (int) arg;
 	char buff[BUFFSIZE];
@@ -68,6 +81,13 @@ static void* clientHandler(void *arg) {
 	read(clientskt, buff, BUFFSIZE);
 	printf("%s", buff);
 	write(clientskt, "0", 2);
+	incrementaClientConnessi();
+	
+	do {
+		read(clientskt, buff, BUFFSIZE);
+		if (strcmp(buff, "LEAVE\n") == 0) break;
+		else printf("%s\n", buff);
+	} while(1); //TODO fix
 
 	close(clientskt);
 }
@@ -83,10 +103,10 @@ int main (int argc, char *argv[]) {
 		sktAccepted = accept(skt, NULL, 0);
 		for (i = 0; i < MAXTHREADS; i++) {
 			//TODO check thread vuoto
-				retval = pthread_create(&threadpool[i], NULL, *clientHandler, sktAccepted);
-				break;
+			retval = pthread_create(&threadpool[i], NULL, *clientHandler, sktAccepted);
+			break;
 		}
-	} while(1);
+	} while(1); //TODO fix
 
 	return 0;
 }
