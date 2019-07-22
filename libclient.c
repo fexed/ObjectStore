@@ -13,6 +13,8 @@ int skt;
 int os_connect(char *name){
 	struct sockaddr_un skta;
 	char *buff;
+	int value;
+
 	strncpy(skta.sun_path, SOCKETNAME, UNIX_PATH_MAX);
 	skta.sun_family = AF_UNIX;
 	skt = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -20,12 +22,17 @@ int os_connect(char *name){
 		if (errno == ENOENT) sleep(1); //socket non esiste
 		else return -1;
 	}
+
 	buff = calloc(BUFFSIZE, sizeof(char));
 	buff = strcpy(buff, "REGISTER ");
 	buff = strcat(buff, name);
 	buff = strcat(buff, "\n");
 	write(skt, buff, BUFFSIZE);
-	return true;
+	
+	read(skt, buff, BUFFSIZE);
+	value = atoi(buff);
+
+	return value;
 }
 
 int os_store(char *name, void *block, size_t len);

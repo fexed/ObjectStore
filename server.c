@@ -67,6 +67,7 @@ static void* clientHandler(void *arg) {
 
 	read(clientskt, buff, BUFFSIZE);
 	printf("%s", buff);
+	write(clientskt, "0", 2);
 
 	close(clientskt);
 }
