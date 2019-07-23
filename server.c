@@ -79,14 +79,17 @@ void decrementaClientConnessi() {
 static void* clientHandler(void *arg) {
 	int clientskt = (int) arg;
 	int value;
-	char* buff;
-	char *name;
+	char *buff, *name, *header, *dirname;
 
 	buff = calloc(BUFFSIZE, sizeof(char));
 	read(clientskt, buff, BUFFSIZE);
 	strtok(buff, " ");
-	name = strtok(NULL, " ");
+	dirname = strtok(NULL, " ");
+	name = malloc(sizeof(dirname));
+	strcpy(name, dirname);
+	printf("%s\tConnesso\n", name);
 	
+	//strcpy(dirname, name);
 	value = mkdir(name, 0700);
 	if (value != 0 && errno != EEXIST) {
 		free(buff);
@@ -105,11 +108,27 @@ static void* clientHandler(void *arg) {
 
 	do {
 		read(clientskt, buff, BUFFSIZE);
-		if (strcmp(buff, "LEAVE \n") == 0) {
-			write(clientskt, "OK \n", 4);
+		header = strtok(buff, " ");
+		printf("%s\t%s\n", name, header);
+		if (strcmp(header, "LEAVE")) {
+			write(clientskt, "OK \n", 5);
 			break;
+		} else if (strcmp(header, "STORE")) {
+			char *dataname, *datavalue;
+			size_t datalen;
+
+			dataname = strtok(NULL, " ");
+			datalen = atoi(strtok(NULL, " "));
+			strtok(NULL, " ");
+			strtok(NULL, " ");
+			datavalue = strtok(NULL, " ");
+
+			printf("%s: %s, %d:\t%s\n", name, dataname, (int)datalen, datavalue);
+			write(clientskt, "OK \n", 5);
+		} else {
+			printf("%s\t%s\n", name, header);
+			write(clientskt, "OK \n", 5);
 		}
-		else printf("%s\n", buff);
 	} while(1); //TODO fix
 
 	close(clientskt);

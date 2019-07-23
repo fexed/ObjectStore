@@ -43,13 +43,27 @@ int os_connect(char *name){
 
 int os_store(char *name, void *block, size_t len) {
 	char *buff = calloc(BUFFSIZE, sizeof(char));
+	int value;
+
 	buff = strcpy(buff, "STORE ");
 	buff = strcat(buff, name);
 	buff = strcat(buff, " ");
-	buff = strcat(buff, (int) len); //fix?
+	char strvalue[10];
+	sprintf(strvalue, "%d", len);
+	buff = strcat(buff, strvalue);
 	buff = strcat(buff, " \n ");
 	buff = strcat(buff, block);
 	write(skt, buff, BUFFSIZE);
+
+	read(skt, buff, BUFFSIZE);
+	value = strcmp(buff, "OK \n");
+
+	if (value != 0) {
+		strtok(buff, " ");
+		printf("%s\n", strtok(NULL, "\n"));
+	}
+
+	return value;
 }
 
 void *os_retrieve(char *name);
