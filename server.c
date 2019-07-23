@@ -23,7 +23,9 @@ int skt, sktAccepted;
 struct sockaddr_un skta;
 struct sigaction s;
 pthread_t threadpool[MAXTHREADS];
+int threads;
 static pthread_mutex_t clientConnessiMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t threadAttiviMutex = PTHREAD_MUTEX_INITIALIZER;
 
 void cleanupserver() {
 	close(skt);
@@ -41,7 +43,7 @@ static void signalHandler(int signum) {
 }
 
 int startupserver() {
-	int retval;
+	int retval, i;
 	memset(&s, 0, sizeof(s));
 	s.sa_handler = signalHandler;
 	retval = sigaction(SIGUSR1, &s, NULL);
@@ -58,6 +60,7 @@ int startupserver() {
 	atexit(cleanupserver);
 
 	clientConnessi = 0;
+	threads = 0;
 	oggettiMemorizzati = 0;
 	storeTotalSize = 0;
 
@@ -76,11 +79,24 @@ void decrementaClientConnessi() {
 	pthread_mutex_unlock(&clientConnessiMutex);
 }
 
+void incrementaThreadAttivi() {
+	pthread_mutex_lock(&threadAttiviMutex);
+	threads++;
+	pthread_mutex_unlock(&threadAttiviMutex);
+}
+
+void decrementaThreadAttivi() {
+	pthread_mutex_lock(&threadAttiviMutex);
+	threads--;
+	pthread_mutex_unlock(&threadAttiviMutex);
+}
+
 static void* clientHandler(void *arg) {
 	int clientskt = (int) arg;
 	int value;
 	char *buff, *name, *header, *dirname;
 
+	incrementaThreadAttivi();
 	buff = calloc(BUFFSIZE, sizeof(char));
 	read(clientskt, buff, BUFFSIZE);
 	strtok(buff, " ");
@@ -111,7 +127,6 @@ static void* clientHandler(void *arg) {
 		buff = calloc(BUFFSIZE, sizeof(char));
 		read(clientskt, buff, BUFFSIZE);
 		header = strtok(buff, " ");
-		printf("%s\t%s\n", name, header);
 		if (strcmp(header, "LEAVE")) {
 			write(clientskt, "OK \n", 5);
 			printf("%s\tDisconnesso\n", name);
@@ -135,6 +150,8 @@ static void* clientHandler(void *arg) {
 	} while(1); //TODO fix
 
 	close(clientskt);
+	decrementaClientConnessi();
+	decrementaThreadAttivi();
 	pthread_exit(NULL);
 }
 
@@ -147,10 +164,9 @@ int main (int argc, char *argv[]) {
 	do {
 		listen(skt, SOMAXCONN);
 		sktAccepted = accept(skt, NULL, 0);
-		for (i = 0; i < MAXTHREADS; i++) {
-			//TODO check thread vuoto
-			retval = pthread_create(&threadpool[i], NULL, *clientHandler, (void *)sktAccepted);
-			break;
+		if (threads < MAXTHREADS) {
+			retval = pthread_create(&threadpool[threads], NULL, *clientHandler, (void *)sktAccepted);
+			//TODO fix                          ^^^^^^^
 		}
 	} while(1); //TODO fix
 

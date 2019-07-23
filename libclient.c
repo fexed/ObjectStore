@@ -49,10 +49,11 @@ int os_store(char *name, void *block, size_t len) {
 	buff = strcat(buff, name);
 	buff = strcat(buff, " ");
 	char strvalue[10];
-	sprintf(strvalue, "%d", len);
+	sprintf(strvalue, "%d", (int)len);
 	buff = strcat(buff, strvalue);
 	buff = strcat(buff, " \n ");
 	buff = strcat(buff, block);
+	
 	write(skt, buff, BUFFSIZE);
 
 	read(skt, buff, BUFFSIZE);
