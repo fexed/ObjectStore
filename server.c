@@ -95,8 +95,9 @@ static void* clientHandler(void *arg) {
 	int clientskt = (int) arg;
 	int value;
 	char *buff, *name, *header, *dirname;
-	char *dataname, *datavalue;
+	char *dataname, *datavalue, *filename;
 	size_t datalen;
+	FILE* fileout;
 
 	incrementaThreadAttivi();
 	buff = calloc(BUFFSIZE, sizeof(char));
@@ -128,8 +129,8 @@ static void* clientHandler(void *arg) {
 		free(buff);
 		buff = calloc(BUFFSIZE, sizeof(char));
 		read(clientskt, buff, BUFFSIZE);
+
 		header = strtok(buff, " ");
-		//printf("%s\n", header);
 		if (strcmp(header, "STORE") == 0) {
 			dataname = strtok(NULL, " ");
 			datalen = atoi(strtok(NULL, " "));
@@ -137,6 +138,25 @@ static void* clientHandler(void *arg) {
 			datavalue = strtok(NULL, " ");
 
 			printf("%s\t%s, %d:\t%s\n", name, dataname, (int)datalen, datavalue);
+
+			filename = calloc(strlen(name)+strlen(dataname)+1, sizeof(char));
+			filename = strcpy(filename, name);
+			filename = strcat(filename, "/");
+			filename = strcat(filename, dataname);
+			fileout = fopen(filename, "w");
+
+			if (fileout == NULL) {
+				buff = calloc(BUFFSIZE, sizeof(char));
+				buff = strcpy(buff, "KO Errore creazione file \n");
+				write(clientskt, "OK \n", strlen(buff)+1);
+			} else {
+				fprintf(fileout, "%s", datavalue);
+				fclose(fileout);
+				write(clientskt, "OK \n", 5);
+			}
+		} else if (strcmp(header, "RETRIEVE") == 0) {
+			write(clientskt, "OK \n", 5);
+		} else if (strcmp(header, "DELETE") == 0) {
 			write(clientskt, "OK \n", 5);
 		} else if (strcmp(header, "LEAVE") == 0) {
 			write(clientskt, "OK \n", 5);
