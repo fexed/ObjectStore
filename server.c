@@ -4,6 +4,7 @@
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -77,13 +78,25 @@ void decrementaClientConnessi() {
 
 static void* clientHandler(void *arg) {
 	int clientskt = (int) arg;
-	char buff[BUFFSIZE];
+	int value;
+	char* buff;
 	char *name;
 
+	buff = calloc(BUFFSIZE, sizeof(char));
 	read(clientskt, buff, BUFFSIZE);
 	strtok(buff, " ");
 	name = strtok(NULL, " ");
-	printf("%s\n", name);
+	
+	value = mkdir(name, 0700);
+	if (value != 0 && errno != EEXIST) {
+		free(buff);
+		buff = calloc(BUFFSIZE, sizeof(char));
+		buff = strcmp(buff, "KO Errore creazione directory: ");
+		buff = strcat(buff, value);
+		buff = strcat(buff, " \n");
+		pthread_exit(NULL);
+	}
+
 	write(clientskt, "OK \n", 5);
 	incrementaClientConnessi();
 

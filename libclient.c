@@ -33,6 +33,11 @@ int os_connect(char *name){
 
 	value = strcmp(buff, "OK \n");
 
+	if (value != 0) {
+		strtok(buff, " ");
+		printf("Connessione fallita\n%s\n", strtok(NULL, "\n"));
+	}
+
 	return value;
 }
 
