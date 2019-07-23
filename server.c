@@ -127,6 +127,7 @@ static void* clientHandler(void *arg) {
 		buff = calloc(BUFFSIZE, sizeof(char));
 		read(clientskt, buff, BUFFSIZE);
 		header = strtok(buff, " ");
+		printf("%s\n", header);
 		if (strcmp(header, "LEAVE")) {
 			write(clientskt, "OK \n", 5);
 			printf("%s\tDisconnesso\n", name);
