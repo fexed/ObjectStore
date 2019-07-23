@@ -4,7 +4,7 @@
 
 int main(int argc, char *argv[]) {
 	int n = os_connect(argv[1]);
-	printf("Connessione: %d", n);
+	printf("Connessione: %d\n", n);
 	os_disconnect();
 	return 0;
 }
