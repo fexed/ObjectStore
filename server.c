@@ -91,9 +91,12 @@ static void* clientHandler(void *arg) {
 	if (value != 0 && errno != EEXIST) {
 		free(buff);
 		buff = calloc(BUFFSIZE, sizeof(char));
-		buff = strcmp(buff, "KO Errore creazione directory: ");
-		buff = strcat(buff, value);
+		buff = strcpy(buff, "KO Errore creazione directory: ");
+		char strvalue[10];
+		sprintf(strvalue, "%d", value);
+		buff = strcat(buff, strvalue);
 		buff = strcat(buff, " \n");
+		write(clientskt, buff, strlen(buff)+1);
 		pthread_exit(NULL);
 	}
 
