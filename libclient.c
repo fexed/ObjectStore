@@ -52,8 +52,8 @@ int os_store(char *name, void *block, size_t len) {
 	sprintf(strvalue, "%d", (int)len);
 	buff = strcat(buff, strvalue);
 	buff = strcat(buff, " \n ");
-	buff = strcat(buff, block);
-	
+	buff = strcat(buff, (char *)block);
+
 	write(skt, buff, BUFFSIZE);
 
 	read(skt, buff, BUFFSIZE);

@@ -134,7 +134,6 @@ static void* clientHandler(void *arg) {
 			dataname = strtok(NULL, " ");
 			datalen = atoi(strtok(NULL, " "));
 			strtok(NULL, " ");
-			strtok(NULL, " ");
 			datavalue = strtok(NULL, " ");
 
 			printf("%s\t%s, %d:\t%s\n", name, dataname, (int)datalen, datavalue);
