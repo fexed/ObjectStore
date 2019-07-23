@@ -95,6 +95,8 @@ static void* clientHandler(void *arg) {
 	int clientskt = (int) arg;
 	int value;
 	char *buff, *name, *header, *dirname;
+	char *dataname, *datavalue;
+	size_t datalen;
 
 	incrementaThreadAttivi();
 	buff = calloc(BUFFSIZE, sizeof(char));
@@ -127,23 +129,24 @@ static void* clientHandler(void *arg) {
 		buff = calloc(BUFFSIZE, sizeof(char));
 		read(clientskt, buff, BUFFSIZE);
 		header = strtok(buff, " ");
-		printf("%s\n", header);
-		if (strcmp(header, "LEAVE")) {
-			write(clientskt, "OK \n", 5);
-			printf("%s\tDisconnesso\n", name);
-			break;
-		} else if (strcmp(header, "STORE")) {
-			char *dataname, *datavalue;
-			size_t datalen;
-
+		//printf("%s\n", header);
+		if (strcmp(header, "STORE") == 0) {
 			dataname = strtok(NULL, " ");
 			datalen = atoi(strtok(NULL, " "));
 			strtok(NULL, " ");
 			strtok(NULL, " ");
 			datavalue = strtok(NULL, " ");
 
-			printf("%s: %s, %d:\t%s\n", name, dataname, (int)datalen, datavalue);
+			printf("%s\t%s, %d:\t%s\n", name, dataname, (int)datalen, datavalue);
 			write(clientskt, "OK \n", 5);
+		} else if (strcmp(header, "LEAVE") == 0) {
+			write(clientskt, "OK \n", 5);
+			printf("%s\tDisconnesso\n", name);
+
+			close(clientskt);
+			decrementaClientConnessi();
+			decrementaThreadAttivi();
+			pthread_exit(NULL);
 		} else {
 			printf("%s\t%s\n", name, header);
 			write(clientskt, "OK \n", 5);
