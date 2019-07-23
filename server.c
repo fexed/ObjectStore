@@ -107,11 +107,14 @@ static void* clientHandler(void *arg) {
 	incrementaClientConnessi();
 
 	do {
+		free(buff);
+		buff = calloc(BUFFSIZE, sizeof(char));
 		read(clientskt, buff, BUFFSIZE);
 		header = strtok(buff, " ");
 		printf("%s\t%s\n", name, header);
 		if (strcmp(header, "LEAVE")) {
 			write(clientskt, "OK \n", 5);
+			printf("%s\tDisconnesso\n", name);
 			break;
 		} else if (strcmp(header, "STORE")) {
 			char *dataname, *datavalue;
