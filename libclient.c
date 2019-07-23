@@ -30,12 +30,15 @@ int os_connect(char *name){
 	write(skt, buff, BUFFSIZE);
 	
 	read(skt, buff, BUFFSIZE);
-	value = atoi(buff);
+
+	value = strcmp(buff, "OK\n");
 
 	return value;
 }
 
-int os_store(char *name, void *block, size_t len);
+int os_store(char *name, void *block, size_t len) {
+
+}
 
 void *os_retrieve(char *name);
 
