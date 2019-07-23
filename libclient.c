@@ -26,18 +26,25 @@ int os_connect(char *name){
 	buff = calloc(BUFFSIZE, sizeof(char));
 	buff = strcpy(buff, "REGISTER ");
 	buff = strcat(buff, name);
-	buff = strcat(buff, "\n");
+	buff = strcat(buff, " \n");
 	write(skt, buff, BUFFSIZE);
 	
 	read(skt, buff, BUFFSIZE);
 
-	value = strcmp(buff, "OK\n");
+	value = strcmp(buff, "OK \n");
 
 	return value;
 }
 
 int os_store(char *name, void *block, size_t len) {
-
+	char *buff = calloc(BUFFSIZE, sizeof(char));
+	buff = strcpy(buff, "STORE ");
+	buff = strcat(buff, name);
+	buff = strcat(buff, " ");
+	buff = strcat(buff, (int) len); //fix?
+	buff = strcat(buff, " \n ");
+	buff = strcat(buff, block);
+	write(skt, buff, BUFFSIZE);
 }
 
 void *os_retrieve(char *name);
@@ -45,7 +52,7 @@ void *os_retrieve(char *name);
 int os_delete(char *name);
 
 int os_disconnect() {
-	write(skt, "LEAVE\n", 7);
+	write(skt, "LEAVE \n", 8);
 	close(skt);
 	return 0;
 }

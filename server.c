@@ -78,16 +78,19 @@ void decrementaClientConnessi() {
 static void* clientHandler(void *arg) {
 	int clientskt = (int) arg;
 	char buff[BUFFSIZE];
+	char *name;
 
 	read(clientskt, buff, BUFFSIZE);
-	printf("%s", buff);
-	write(clientskt, "OK\n", 4);
+	strtok(buff, " ");
+	name = strtok(NULL, " ");
+	printf("%s\n", name);
+	write(clientskt, "OK \n", 5);
 	incrementaClientConnessi();
 
 	do {
 		read(clientskt, buff, BUFFSIZE);
-		if (strcmp(buff, "LEAVE\n") == 0) {
-			write(clientskt, "OK\n", 4);
+		if (strcmp(buff, "LEAVE \n") == 0) {
+			write(clientskt, "OK \n", 4);
 			break;
 		}
 		else printf("%s\n", buff);
