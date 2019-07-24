@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 
@@ -43,7 +44,7 @@ static void signalHandler(int signum) {
 }
 
 int startupserver() {
-	int retval, i;
+	int retval;
 	memset(&s, 0, sizeof(s));
 	s.sa_handler = signalHandler;
 	retval = sigaction(SIGUSR1, &s, NULL);
@@ -98,7 +99,7 @@ static void* clientHandler(void *arg) {
 	char *buff, *name, *header, *dirname;
 	char *dataname, *filename;
 	void *datavalue;
-	size_t datalen, *datalenr;
+	size_t datalen;
 	FILE* file;
 
 	incrementaThreadAttivi();
@@ -135,6 +136,7 @@ static void* clientHandler(void *arg) {
 		free(buff);
 		buff = calloc(BUFFSIZE, sizeof(char));
 		read(clientskt, buff, BUFFSIZE);
+		//printf("<\t%s\nend\n", buff);
 
 		header = strtok(buff, " ");
 		if (strcmp(header, "STORE") == 0) {
@@ -243,8 +245,8 @@ static void* clientHandler(void *arg) {
 	pthread_exit(NULL);
 }
 
-int main (int argc, char *argv[]) {
-	int retval, i;
+int main () {
+	int retval;
 
 	retval = startupserver();
 	CHECK_RETVAL(retval, "Server setup");
