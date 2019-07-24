@@ -11,3 +11,4 @@ all :
 
 clean :
 	rm -f client server libclient.a libclient.o
+	rm -rf data/

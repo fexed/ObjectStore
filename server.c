@@ -57,6 +57,7 @@ int startupserver() {
 	retval = bind(skt, (struct sockaddr *)&skta, sizeof(skta));
 	if (retval != 0) return retval;
 
+	mkdir("data", 0700);
 	atexit(cleanupserver);
 
 	clientConnessi = 0;
@@ -102,18 +103,21 @@ static void* clientHandler(void *arg) {
 	incrementaThreadAttivi();
 	buff = calloc(BUFFSIZE, sizeof(char));
 	read(clientskt, buff, BUFFSIZE);
-	strtok(buff, " ");
-	dirname = strtok(NULL, " ");
-	name = malloc(sizeof(dirname));
-	strcpy(name, dirname);
+	header = strtok(buff, " ");
+	//TODO if header = REGISTER...
+	name = strtok(NULL, " ");
+	dirname = malloc(sizeof(name)+sizeof("data/"));
+	dirname = strcpy(dirname, "data/");
+	dirname = strcat(dirname, name);
 	printf("%s\tConnesso\n", name);
-	
-	//strcpy(dirname, name);
-	value = mkdir(name, 0700);
+
+	value = mkdir(dirname, 0700);
 	if (value != 0 && errno != EEXIST) {
 		free(buff);
 		buff = calloc(BUFFSIZE, sizeof(char));
-		buff = strcpy(buff, "KO Errore creazione directory: ");
+		buff = strcpy(buff, "KO Errore: ");
+		buff = strcat(buff, strerror(errno));
+		buff = strcat(buff, " \n");
 		char strvalue[10];
 		sprintf(strvalue, "%d", value);
 		buff = strcat(buff, strvalue);
@@ -140,8 +144,8 @@ static void* clientHandler(void *arg) {
 
 			//printf("%s\t%s, %d:\t%s\n", name, dataname, (int)datalen, datavalue);
 
-			filename = calloc(strlen(name)+strlen(dataname)+1, sizeof(char));
-			filename = strcpy(filename, name);
+			filename = calloc(strlen(dirname)+strlen(dataname)+1, sizeof(char));
+			filename = strcpy(filename, dirname);
 			filename = strcat(filename, "/");
 			filename = strcat(filename, dataname);
 			file = fopen(filename, "w");
@@ -150,7 +154,9 @@ static void* clientHandler(void *arg) {
 				free(filename);
 				free(buff);
 				buff = calloc(BUFFSIZE, sizeof(char));
-				buff = strcpy(buff, "KO Errore creazione/scrittura file \n");
+				buff = strcpy(buff, "KO Errore: ");
+				buff = strcat(buff, strerror(errno));
+				buff = strcat(buff, " \n");
 				write(clientskt, buff, strlen(buff)+1);
 			} else {
 				fprintf(file, "%s", datavalue);
@@ -161,8 +167,8 @@ static void* clientHandler(void *arg) {
 		} else if (strcmp(header, "RETRIEVE") == 0) {
 			dataname = strtok(NULL, " ");
 
-			filename = calloc(strlen(name)+strlen(dataname)+1, sizeof(char));
-			filename = strcpy(filename, name);
+			filename = calloc(strlen(dirname)+strlen(dataname)+1, sizeof(char));
+			filename = strcpy(filename, dirname);
 			filename = strcat(filename, "/");
 			filename = strcat(filename, dataname);
 			file = fopen(filename, "r");
@@ -171,7 +177,9 @@ static void* clientHandler(void *arg) {
 				free(filename);
 				free(buff);
 				buff = calloc(BUFFSIZE, sizeof(char));
-				buff = strcpy(buff, "KO Errore lettura file \n");
+				buff = strcpy(buff, "KO Errore: ");
+				buff = strcat(buff, strerror(errno));
+				buff = strcat(buff, " \n");
 				write(clientskt, buff, strlen(buff)+1);
 			} else {
 				datavalue = calloc(BUFFSIZE, sizeof(char));
@@ -191,8 +199,10 @@ static void* clientHandler(void *arg) {
 				write(clientskt, buff, strlen(buff));
 			}
 		} else if (strcmp(header, "DELETE") == 0) {
-			filename = calloc(strlen(name)+strlen(dataname)+1, sizeof(char));
-			filename = strcpy(filename, name);
+			dataname = strtok(NULL, " ");
+			
+			filename = calloc(strlen(dirname)+strlen(dataname)+1, sizeof(char));
+			filename = strcpy(filename, dirname);
 			filename = strcat(filename, "/");
 			filename = strcat(filename, dataname);
 			value = remove(filename);
@@ -203,7 +213,9 @@ static void* clientHandler(void *arg) {
 			} else {
 				free(buff);
 				buff = calloc(BUFFSIZE, sizeof(char));
-				buff = strcpy(buff, "KO Errore rimozione file \n");
+				buff = strcpy(buff, "KO Errore: ");
+				buff = strcat(buff, strerror(errno));
+				buff = strcat(buff, " \n");
 				write(clientskt, buff, strlen(buff)+1);
 			}
 		} else if (strcmp(header, "LEAVE") == 0) {

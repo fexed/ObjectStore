@@ -12,7 +12,8 @@ int main(int argc, char *argv[]) {
 
 		printf("Lettura: %s\n", (char *) os_retrieve("Nome"));
 
-		n = os_delete("Nome");
+		os_store("Prova", "Contenuto", 10);
+		n = os_delete("Prova");
 		printf("Rimozione: %d\n", n);
 
 		os_disconnect();
