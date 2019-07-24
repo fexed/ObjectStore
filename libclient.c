@@ -84,14 +84,34 @@ void *os_retrieve(char *name) {
 	if(strcmp(header, "DATA") == 0) {
 		strtok(NULL, " ");
 		strtok(NULL, " ");
-		header = strtok(NULL, " ");
-		return (void *) header;
+		header = strtok(NULL, " ");//TODO len bytes
+		return (void *) header; //ora è il dato
 	} else {
 		return (void *) strtok(NULL, "\n");
 	}
 }
 
-int os_delete(char *name);
+int os_delete(char *name) {
+	char *buff = calloc(BUFFSIZE, sizeof(char));
+	int value;
+
+	buff = strcpy(buff, "DELETE ");
+	buff = strcat(buff, name);
+	buff = strcat(buff, " \n");
+
+	write(skt, buff, BUFFSIZE);
+
+	read(skt, buff, BUFFSIZE);
+
+	value = strcmp(buff, "OK \n");
+
+	if (value != 0) {
+		strtok(buff, " ");
+		printf("%s\n", strtok(NULL, "\n"));
+	}
+
+	return value;
+}
 
 int os_disconnect() {
 	write(skt, "LEAVE \n", 8);

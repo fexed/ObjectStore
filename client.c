@@ -10,7 +10,10 @@ int main(int argc, char *argv[]) {
 		n = os_store("Nome", "Contenuto", 10);
 		printf("Memorizzazione: %d\n", n);
 
-		printf("%s\n", (char *) os_retrieve("Nome"));
+		printf("Lettura: %s\n", (char *) os_retrieve("Nome"));
+
+		n = os_delete("Nome");
+		printf("Rimozione: %d\n", n);
 
 		os_disconnect();
 	}

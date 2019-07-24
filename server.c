@@ -147,13 +147,15 @@ static void* clientHandler(void *arg) {
 			file = fopen(filename, "w");
 
 			if (file == NULL) {
+				free(filename);
 				free(buff);
 				buff = calloc(BUFFSIZE, sizeof(char));
-				buff = strcpy(buff, "KO Errore creazione file \n");
-				write(clientskt, "OK \n", strlen(buff)+1);
+				buff = strcpy(buff, "KO Errore creazione/scrittura file \n");
+				write(clientskt, buff, strlen(buff)+1);
 			} else {
 				fprintf(file, "%s", datavalue);
 				fclose(file);
+				free(filename);
 				write(clientskt, "OK \n", 5);
 			}
 		} else if (strcmp(header, "RETRIEVE") == 0) {
@@ -165,22 +167,45 @@ static void* clientHandler(void *arg) {
 			filename = strcat(filename, dataname);
 			file = fopen(filename, "r");
 
-			datavalue = calloc(BUFFSIZE, sizeof(char));
-			fgets(datavalue, BUFFSIZE, file);
-			fclose(file);
+			if (file == NULL) {
+				free(filename);
+				free(buff);
+				buff = calloc(BUFFSIZE, sizeof(char));
+				buff = strcpy(buff, "KO Errore lettura file \n");
+				write(clientskt, buff, strlen(buff)+1);
+			} else {
+				datavalue = calloc(BUFFSIZE, sizeof(char));
+				fgets(datavalue, BUFFSIZE, file);
+				fclose(file);
+				free(filename);
 
-			free(buff);
-			buff = calloc(BUFFSIZE, sizeof(char));
-			buff = strcpy(buff, "DATA ");
-			char strvalue[10];
-			sprintf(strvalue, "%d", (int)strlen(datavalue));
-			buff = strcat(buff, strvalue);
-			buff = strcat(buff, " \n ");
-			buff = strcat(buff, datavalue);
+				free(buff);
+				buff = calloc(BUFFSIZE, sizeof(char));
+				buff = strcpy(buff, "DATA ");
+				char strvalue[10];
+				sprintf(strvalue, "%d", (int)strlen(datavalue));
+				buff = strcat(buff, strvalue);
+				buff = strcat(buff, " \n ");
+				buff = strcat(buff, datavalue);
 
-			write(clientskt, buff, strlen(buff));
+				write(clientskt, buff, strlen(buff));
+			}
 		} else if (strcmp(header, "DELETE") == 0) {
-			write(clientskt, "OK \n", 5);
+			filename = calloc(strlen(name)+strlen(dataname)+1, sizeof(char));
+			filename = strcpy(filename, name);
+			filename = strcat(filename, "/");
+			filename = strcat(filename, dataname);
+			value = remove(filename);
+			free(filename);
+
+			if (value == 0) {
+				write(clientskt, "OK \n", 5);
+			} else {
+				free(buff);
+				buff = calloc(BUFFSIZE, sizeof(char));
+				buff = strcpy(buff, "KO Errore rimozione file \n");
+				write(clientskt, buff, strlen(buff)+1);
+			}
 		} else if (strcmp(header, "LEAVE") == 0) {
 			write(clientskt, "OK \n", 5);
 			printf("%s\tDisconnesso\n", name);
