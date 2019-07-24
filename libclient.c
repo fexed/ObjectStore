@@ -67,7 +67,29 @@ int os_store(char *name, void *block, size_t len) {
 	return value;
 }
 
-void *os_retrieve(char *name);
+void *os_retrieve(char *name) {
+	char *buff = calloc(BUFFSIZE, sizeof(char));
+	char *header, *data;
+	size_t len;
+
+	buff = strcpy(buff, "RETRIEVE ");
+	buff = strcat(buff, name);
+	buff = strcat(buff, " \n");
+
+	write(skt, buff, BUFFSIZE);
+
+	read(skt, buff, BUFFSIZE);
+	header = strtok(buff, " ");
+
+	if(strcmp(header, "DATA") == 0) {
+		strtok(NULL, " ");
+		strtok(NULL, " ");
+		header = strtok(NULL, " ");
+		return (void *) header;
+	} else {
+		return (void *) strtok(NULL, "\n");
+	}
+}
 
 int os_delete(char *name);
 

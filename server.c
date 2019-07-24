@@ -97,7 +97,7 @@ static void* clientHandler(void *arg) {
 	char *buff, *name, *header, *dirname;
 	char *dataname, *datavalue, *filename;
 	size_t datalen;
-	FILE* fileout;
+	FILE* file;
 
 	incrementaThreadAttivi();
 	buff = calloc(BUFFSIZE, sizeof(char));
@@ -119,6 +119,7 @@ static void* clientHandler(void *arg) {
 		buff = strcat(buff, strvalue);
 		buff = strcat(buff, " \n");
 		write(clientskt, buff, strlen(buff)+1);
+		decrementaThreadAttivi();
 		pthread_exit(NULL);
 	}
 
@@ -137,25 +138,47 @@ static void* clientHandler(void *arg) {
 			strtok(NULL, " ");
 			datavalue = strtok(NULL, " ");
 
-			printf("%s\t%s, %d:\t%s\n", name, dataname, (int)datalen, datavalue);
+			//printf("%s\t%s, %d:\t%s\n", name, dataname, (int)datalen, datavalue);
 
 			filename = calloc(strlen(name)+strlen(dataname)+1, sizeof(char));
 			filename = strcpy(filename, name);
 			filename = strcat(filename, "/");
 			filename = strcat(filename, dataname);
-			fileout = fopen(filename, "w");
+			file = fopen(filename, "w");
 
-			if (fileout == NULL) {
+			if (file == NULL) {
+				free(buff);
 				buff = calloc(BUFFSIZE, sizeof(char));
 				buff = strcpy(buff, "KO Errore creazione file \n");
 				write(clientskt, "OK \n", strlen(buff)+1);
 			} else {
-				fprintf(fileout, "%s", datavalue);
-				fclose(fileout);
+				fprintf(file, "%s", datavalue);
+				fclose(file);
 				write(clientskt, "OK \n", 5);
 			}
 		} else if (strcmp(header, "RETRIEVE") == 0) {
-			write(clientskt, "OK \n", 5);
+			dataname = strtok(NULL, " ");
+
+			filename = calloc(strlen(name)+strlen(dataname)+1, sizeof(char));
+			filename = strcpy(filename, name);
+			filename = strcat(filename, "/");
+			filename = strcat(filename, dataname);
+			file = fopen(filename, "r");
+
+			datavalue = calloc(BUFFSIZE, sizeof(char));
+			fgets(datavalue, BUFFSIZE, file);
+			fclose(file);
+
+			free(buff);
+			buff = calloc(BUFFSIZE, sizeof(char));
+			buff = strcpy(buff, "DATA ");
+			char strvalue[10];
+			sprintf(strvalue, "%d", (int)strlen(datavalue));
+			buff = strcat(buff, strvalue);
+			buff = strcat(buff, " \n ");
+			buff = strcat(buff, datavalue);
+
+			write(clientskt, buff, strlen(buff));
 		} else if (strcmp(header, "DELETE") == 0) {
 			write(clientskt, "OK \n", 5);
 		} else if (strcmp(header, "LEAVE") == 0) {
