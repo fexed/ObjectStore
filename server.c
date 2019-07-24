@@ -98,7 +98,7 @@ static void* clientHandler(void *arg) {
 	char *buff, *name, *header, *dirname;
 	char *dataname, *filename;
 	void *datavalue;
-	size_t datalen;
+	size_t datalen, *datalenr;
 	FILE* file;
 
 	incrementaThreadAttivi();
@@ -161,6 +161,7 @@ static void* clientHandler(void *arg) {
 				buff = strcat(buff, " \n");
 				write(clientskt, buff, strlen(buff)+1);
 			} else {
+				fwrite(&datalen, sizeof(size_t), 1, file);
 				fwrite(datavalue, sizeof(char), datalen, file);
 				fclose(file);
 				free(filename);
@@ -184,8 +185,10 @@ static void* clientHandler(void *arg) {
 				buff = strcat(buff, " \n");
 				write(clientskt, buff, strlen(buff)+1);
 			} else {
-				datavalue = calloc(BUFFSIZE, sizeof(char));
-				fread(datavalue, sizeof(char), BUFFSIZE, file);
+				//datalenr = calloc(1, sizeof(size_t));
+				fread(&datalen, sizeof(size_t), 1, file);
+				datavalue = calloc(1, datalen);
+				fread(datavalue, datalen, 1, file);
 				fclose(file);
 				free(filename);
 
@@ -193,12 +196,12 @@ static void* clientHandler(void *arg) {
 				buff = calloc(BUFFSIZE, sizeof(char));
 				buff = strcpy(buff, "DATA ");
 				char strvalue[10];
-				sprintf(strvalue, "%ld", sizeof(datavalue));
+				sprintf(strvalue, "%ld", datalen);
 				buff = strcat(buff, strvalue);
 				buff = strcat(buff, " \n");
 
 				write(clientskt, buff, BUFFSIZE);
-				write(clientskt, datavalue, sizeof(datavalue));
+				write(clientskt, datavalue, datalen);
 			}
 		} else if (strcmp(header, "DELETE") == 0) {
 			dataname = strtok(NULL, " ");
