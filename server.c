@@ -9,7 +9,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#define SOCKETNAME "./objectstore_530257"
+#define SOCKETNAME "./objstore.sock"
 #define MAXTHREADS 25
 #define BUFFSIZE 100
 #define UNIX_PATH_MAX 108
@@ -193,7 +193,7 @@ static void* clientHandler(void *arg) {
 				buff = calloc(BUFFSIZE, sizeof(char));
 				buff = strcpy(buff, "DATA ");
 				char strvalue[10];
-				sprintf(strvalue, "%d", (int)sizeof(datavalue));
+				sprintf(strvalue, "%ld", sizeof(datavalue));
 				buff = strcat(buff, strvalue);
 				buff = strcat(buff, " \n");
 

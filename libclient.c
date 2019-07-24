@@ -88,7 +88,7 @@ void *os_retrieve(char *name) {
 		datavalue = calloc(len, sizeof(char));
 
 		read(skt, datavalue, len);
-		return (void *) datavalue;
+		return datavalue;
 	} else {
 		return (void *) strtok(NULL, "\n");
 	}
