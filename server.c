@@ -96,7 +96,8 @@ static void* clientHandler(void *arg) {
 	int clientskt = (int) arg;
 	int value;
 	char *buff, *name, *header, *dirname;
-	char *dataname, *datavalue, *filename;
+	char *dataname, *filename;
+	void *datavalue;
 	size_t datalen;
 	FILE* file;
 
@@ -139,8 +140,9 @@ static void* clientHandler(void *arg) {
 		if (strcmp(header, "STORE") == 0) {
 			dataname = strtok(NULL, " ");
 			datalen = atoi(strtok(NULL, " "));
-			strtok(NULL, " ");
-			datavalue = strtok(NULL, " ");
+			//datavalue = strtok(NULL, " ");
+			datavalue = calloc(datalen, sizeof(char));
+			read(clientskt, datavalue, datalen);
 
 			//printf("%s\t%s, %d:\t%s\n", name, dataname, (int)datalen, datavalue);
 
@@ -159,7 +161,7 @@ static void* clientHandler(void *arg) {
 				buff = strcat(buff, " \n");
 				write(clientskt, buff, strlen(buff)+1);
 			} else {
-				fprintf(file, "%s", datavalue);
+				fwrite(datavalue, sizeof(char), datalen, file);
 				fclose(file);
 				free(filename);
 				write(clientskt, "OK \n", 5);
@@ -183,7 +185,7 @@ static void* clientHandler(void *arg) {
 				write(clientskt, buff, strlen(buff)+1);
 			} else {
 				datavalue = calloc(BUFFSIZE, sizeof(char));
-				fgets(datavalue, BUFFSIZE, file);
+				fread(datavalue, sizeof(char), BUFFSIZE, file);
 				fclose(file);
 				free(filename);
 
@@ -191,12 +193,12 @@ static void* clientHandler(void *arg) {
 				buff = calloc(BUFFSIZE, sizeof(char));
 				buff = strcpy(buff, "DATA ");
 				char strvalue[10];
-				sprintf(strvalue, "%d", (int)strlen(datavalue));
+				sprintf(strvalue, "%d", (int)sizeof(datavalue));
 				buff = strcat(buff, strvalue);
-				buff = strcat(buff, " \n ");
-				buff = strcat(buff, datavalue);
+				buff = strcat(buff, " \n");
 
-				write(clientskt, buff, strlen(buff));
+				write(clientskt, buff, BUFFSIZE);
+				write(clientskt, datavalue, sizeof(datavalue));
 			}
 		} else if (strcmp(header, "DELETE") == 0) {
 			dataname = strtok(NULL, " ");

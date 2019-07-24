@@ -52,9 +52,10 @@ int os_store(char *name, void *block, size_t len) {
 	sprintf(strvalue, "%d", (int)len);
 	buff = strcat(buff, strvalue);
 	buff = strcat(buff, " \n ");
-	buff = strcat(buff, (char *)block);
+	//buff = strcat(buff, (char *)block);
 
 	write(skt, buff, BUFFSIZE);
+	write(skt, block, len);
 
 	read(skt, buff, BUFFSIZE);
 	value = strcmp(buff, "OK \n");
@@ -69,7 +70,8 @@ int os_store(char *name, void *block, size_t len) {
 
 void *os_retrieve(char *name) {
 	char *buff = calloc(BUFFSIZE, sizeof(char));
-	char *header, *data;
+	char *header;
+	void *datavalue;
 	size_t len;
 
 	buff = strcpy(buff, "RETRIEVE ");
@@ -82,10 +84,11 @@ void *os_retrieve(char *name) {
 	header = strtok(buff, " ");
 
 	if(strcmp(header, "DATA") == 0) {
-		strtok(NULL, " ");
-		strtok(NULL, " ");
-		header = strtok(NULL, " ");//TODO len bytes
-		return (void *) header; //ora è il dato
+		len = atoi(strtok(NULL, " "));
+		datavalue = calloc(len, sizeof(char));
+
+		read(skt, datavalue, len);
+		return (void *) datavalue;
 	} else {
 		return (void *) strtok(NULL, "\n");
 	}
