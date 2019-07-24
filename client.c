@@ -15,9 +15,8 @@ struct object testobj2 = {"Nome2", "Prova", 5};
 
 int testSTORE() {
 	int n = os_store(testobj.name, testobj.value, testobj.len);
-			os_disconnect();
+	os_disconnect();
 	return n;
-	//printf("Memorizzazione: %d\n", n);
 }
 
 int testRETRIEVE() {
@@ -30,7 +29,7 @@ int testDELETE() {
 	int n = os_store(testobj2.name, testobj2.value, testobj2.len);
 	if (n == 0) {
 		n =  os_delete(testobj2.name);
-			os_disconnect();
+		os_disconnect();
 		return n;
 	} else {
 		os_disconnect();
@@ -47,7 +46,6 @@ int main(int argc, char *argv[]) {
 
 		if (n == 0) {
 			n = atoi(argv[2]);
-
 			if (n == 1) return testSTORE();
 			else if (n == 2) return testRETRIEVE();
 			else if (n == 3) return testDELETE();

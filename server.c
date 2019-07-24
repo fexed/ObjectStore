@@ -136,17 +136,13 @@ static void* clientHandler(void *arg) {
 		free(buff);
 		buff = calloc(BUFFSIZE, sizeof(char));
 		read(clientskt, buff, BUFFSIZE);
-		//printf("<\t%s\nend\n", buff);
 
 		header = strtok(buff, " ");
 		if (strcmp(header, "STORE") == 0) {
 			dataname = strtok(NULL, " ");
 			datalen = atoi(strtok(NULL, " "));
-			//datavalue = strtok(NULL, " ");
 			datavalue = calloc(datalen, sizeof(char));
 			read(clientskt, datavalue, datalen);
-
-			//printf("%s\t%s, %d:\t%s\n", name, dataname, (int)datalen, datavalue);
 
 			filename = calloc(strlen(dirname)+strlen(dataname)+1, sizeof(char));
 			filename = strcpy(filename, dirname);
