@@ -11,7 +11,7 @@
 #include <sys/un.h>
 
 #define SOCKETNAME "./objstore.sock"
-#define MAXTHREADS 25
+#define MAXTHREADS 50
 #define BUFFSIZE 100
 #define UNIX_PATH_MAX 108
 #define CHECK_RETVAL(value, str) \
@@ -19,14 +19,15 @@
 				perror(str); \
 		}
 
-int clientConnessi, oggettiMemorizzati, storeTotalSize;
+volatile int clientConnessi, oggettiMemorizzati, storeTotalSize, threads;
 int skt, sktAccepted;
 struct sockaddr_un skta;
 struct sigaction s;
 pthread_t threadpool[MAXTHREADS];
-int threads;
 static pthread_mutex_t clientConnessiMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t threadAttiviMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t oggettiMemorizzatiMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t storeTotalSizeMutex = PTHREAD_MUTEX_INITIALIZER;
 
 void cleanupserver() {
 	close(skt);
@@ -36,7 +37,7 @@ void cleanupserver() {
 
 static void signalHandler(int signum) {
 	if (signum == SIGUSR1) {
-		//TODO fix
+		printf("threadAttivi\t\t%d\nclientConnessi\t\t%d\noggettiMemorizzati\t%d\nstoreTotalSize\t\t%d\n", threads, clientConnessi, oggettiMemorizzati, storeTotalSize);
 	} else if (signum == SIGPIPE) {
 	} else {
 		exit(signum);
@@ -67,6 +68,30 @@ int startupserver() {
 	storeTotalSize = 0;
 
 	return retval;
+}
+
+void incrementaOggettiMemorizzati() {
+	pthread_mutex_lock(&oggettiMemorizzatiMutex);
+	oggettiMemorizzati++;
+	pthread_mutex_unlock(&oggettiMemorizzatiMutex);
+}
+
+void decrementaOggettiMemorizzati() {
+	pthread_mutex_lock(&oggettiMemorizzatiMutex);
+	oggettiMemorizzati++;
+	pthread_mutex_unlock(&oggettiMemorizzatiMutex);
+}
+
+void incrementaStoreTotalSize(int size) {
+	pthread_mutex_lock(&storeTotalSizeMutex);
+	storeTotalSize += size;
+	pthread_mutex_unlock(&storeTotalSizeMutex);
+}
+
+void decrementaStoreTotalSize(int size) {
+	pthread_mutex_lock(&storeTotalSizeMutex);
+	storeTotalSize -= size;
+	pthread_mutex_unlock(&storeTotalSizeMutex);
 }
 
 void incrementaClientConnessi() {
@@ -111,7 +136,7 @@ static void* clientHandler(void *arg) {
 	dirname = malloc(sizeof(name)+sizeof("data/"));
 	dirname = strcpy(dirname, "data/");
 	dirname = strcat(dirname, name);
-	printf("%s\tConnesso\n", name);
+	//printf("%s\tConnesso\n", name);
 
 	value = mkdir(dirname, 0700);
 	if (value != 0 && errno != EEXIST) {
@@ -164,6 +189,8 @@ static void* clientHandler(void *arg) {
 				fclose(file);
 				free(filename);
 				write(clientskt, "OK \n", 5);
+				incrementaStoreTotalSize((int) datalen);
+				incrementaOggettiMemorizzati();
 			}
 		} else if (strcmp(header, "RETRIEVE") == 0) {
 			dataname = strtok(NULL, " ");
@@ -208,11 +235,20 @@ static void* clientHandler(void *arg) {
 			filename = strcpy(filename, dirname);
 			filename = strcat(filename, "/");
 			filename = strcat(filename, dataname);
+
+			file = fopen(filename, "r");
+			if (file != NULL) {
+				fread(&datalen, sizeof(size_t), 1, file);
+				fclose(file);
+			}
+
 			value = remove(filename);
 			free(filename);
 
 			if (value == 0) {
 				write(clientskt, "OK \n", 5);
+				decrementaStoreTotalSize((int) datalen);
+				decrementaOggettiMemorizzati();
 			} else {
 				free(buff);
 				buff = calloc(BUFFSIZE, sizeof(char));
@@ -223,15 +259,15 @@ static void* clientHandler(void *arg) {
 			}
 		} else if (strcmp(header, "LEAVE") == 0) {
 			write(clientskt, "OK \n", 5);
-			printf("%s\tDisconnesso\n", name);
+			//printf("%s\tDisconnesso\n", name);
 
 			close(clientskt);
 			decrementaClientConnessi();
 			decrementaThreadAttivi();
 			pthread_exit(NULL);
 		} else {
-			printf("%s\t%s\n", name, header);
-			write(clientskt, "OK \n", 5);
+			//printf("%s\t%s\n", name, header);
+			write(clientskt, "KO Comando non riconosciuto \n", 30);
 		}
 	} while(1); //TODO fix
 

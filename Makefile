@@ -10,5 +10,8 @@ all :
 	$(CC) $(CFLAGS) -pthread server.c $(LDFLAGS) -o server
 
 clean :
-	rm -f client server libclient.a libclient.o
+	rm -f client server libclient.a libclient.o objstore.sock testout.log
 	rm -rf data/
+
+test :
+	./scripttest.sh
