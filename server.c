@@ -49,7 +49,9 @@ int startupserver() {
 	memset(&s, 0, sizeof(s));
 	s.sa_handler = signalHandler;
 	retval = sigaction(SIGUSR1, &s, NULL);
+	if (retval != 0) return retval;
 	retval = sigaction(SIGINT, &s, NULL);
+	if (retval != 0) return retval;
 	retval = sigaction(SIGPIPE, &s, NULL);
 	if (retval != 0) return retval;
 	
@@ -129,6 +131,7 @@ static void* clientHandler(void *arg) {
 
 	incrementaThreadAttivi();
 	buff = calloc(BUFFSIZE, sizeof(char));
+	buff = memset(buff, 0, BUFFSIZE);
 	read(clientskt, buff, BUFFSIZE);
 	header = strtok(buff, " ");
 	//TODO if header = REGISTER...
@@ -150,6 +153,7 @@ static void* clientHandler(void *arg) {
 		buff = strcat(buff, strvalue);
 		buff = strcat(buff, " \n");
 		write(clientskt, buff, BUFFSIZE);
+		free(dirname);
 		decrementaThreadAttivi();
 		pthread_exit(NULL);
 	}
@@ -162,17 +166,18 @@ static void* clientHandler(void *arg) {
 		buff = calloc(BUFFSIZE, sizeof(char));
 		buff = memset(buff, 0, BUFFSIZE);
 		read(clientskt, buff, BUFFSIZE);
-		printf("Ricevo\t%s\n", buff);
+		//printf("Ricevo\t%s\n", buff);
 
 		header = strtok(buff, " ");
 		if (strcmp(header, "STORE") == 0) {
 			dataname = strtok(NULL, " ");
 			datalen = atoi(strtok(NULL, " "));
 			datavalue = malloc(datalen);
-			memset(datavalue, 0, datalen);
+			datavalue = memset(datavalue, 0, datalen);
 			read(clientskt, datavalue, datalen);
 
-			filename = calloc(strlen(dirname)+strlen(dataname)+1, sizeof(char));
+			filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
+			filename = memset(filename, 0, sizeof(char)*(strlen(dirname)+strlen(dataname)+2));
 			filename = strcpy(filename, dirname);
 			filename = strcat(filename, "/");
 			filename = strcat(filename, dataname);
@@ -181,6 +186,7 @@ static void* clientHandler(void *arg) {
 			if (file == NULL) {
 				free(filename);
 				free(buff);
+				free(datavalue);
 				buff = calloc(BUFFSIZE, sizeof(char));
 				memset(buff, 0, BUFFSIZE);
 				buff = strcpy(buff, "KO Errore: ");
@@ -192,6 +198,7 @@ static void* clientHandler(void *arg) {
 				fwrite(datavalue, sizeof(char), datalen, file);
 				fclose(file);
 				free(filename);
+				free(datavalue);
 				write(clientskt, "OK \n", BUFFSIZE);
 				incrementaStoreTotalSize((int) datalen);
 				incrementaOggettiMemorizzati();
@@ -268,7 +275,7 @@ static void* clientHandler(void *arg) {
 		} else if (strcmp(header, "LEAVE") == 0) {
 			write(clientskt, "OK \n", BUFFSIZE);
 			//printf("%s\tDisconnesso\n", name);
-
+			free(dirname);
 			close(clientskt);
 			decrementaClientConnessi();
 			decrementaThreadAttivi();

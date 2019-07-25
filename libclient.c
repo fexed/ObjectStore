@@ -24,6 +24,7 @@ int os_connect(char *name){
 	}
 
 	buff = calloc(BUFFSIZE, sizeof(char));
+	buff = memset(buff, 0, BUFFSIZE);
 	buff = strcpy(buff, "REGISTER ");
 	buff = strcat(buff, name);
 	buff = strcat(buff, " \n");
@@ -38,6 +39,7 @@ int os_connect(char *name){
 		printf("%s\n", strtok(NULL, "\n"));
 	}
 
+	free(buff);
 	return value;
 }
 
@@ -45,7 +47,7 @@ int os_store(char *name, void *block, size_t len) {
 	char *buff = calloc(BUFFSIZE, sizeof(char));
 	int value;
 
-	memset(buff, 0, BUFFSIZE);
+	buff = memset(buff, 0, BUFFSIZE);
 	buff = strcpy(buff, "STORE ");
 	buff = strcat(buff, name);
 	buff = strcat(buff, " ");
@@ -54,17 +56,22 @@ int os_store(char *name, void *block, size_t len) {
 	buff = strcat(buff, strvalue);
 	buff = strcat(buff, " \n");
 
-	printf("Spedisco %s", buff);
+	//printf("Spedisco %s", buff);
 	write(skt, buff, BUFFSIZE);
 	write(skt, block, len);
 
+	free(buff);
+	*buff = calloc(BUFFSIZE, sizeof(char));
+	buff = memset(buff, 0, BUFFSIZE);
 	read(skt, buff, BUFFSIZE);
 	value = strcmp(buff, "OK \n");
 
 	if (value != 0) {
 		strtok(buff, " ");
-		printf("***%s ricevuto\n", strtok(NULL, "\n"));
+		printf("***%s\n", strtok(NULL, "\n"));
 	}
+
+	free(buff);
 	return value;
 }
 
