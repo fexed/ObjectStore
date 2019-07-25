@@ -6,19 +6,20 @@
 
 char *payload = "h9FqC9lYCgmACorQdu0IImWS8QPkdwvMAyjvNr1Sia0w0XSAjRn7NkJBrF5sh5s9SVtW59TFzwzVMzmw0RsveWhMmrRO3kPqBDD8";
 
-struct object {
-	char* name;
-	void* value;
-	size_t len;
-};
+int successi, fallimenti, testtotali;
 
-int testSTORE() {
+void report() {
+	printf("Test effettuati\t%d\nSuccessi\t%d\nFallimenti\t%d\nFine", testtotali, successi, fallimenti);
+}
+
+void testSTORE() {
 	int i, j, n, len;
 	char *substr, *name;
 	printf("Test STORE\n");
 
 	len = 100;
 	for (i = 0; i < 20; i++) {
+		testtotali++;
 		substr = malloc(len);
 		substr = strcpy(substr, payload);
 		for (n = 0; n < i; n++) {
@@ -33,7 +34,8 @@ int testSTORE() {
 
 		n = os_store(name, substr, len);
 
-		if (n != 0) return n;
+		if (n == 0) successi++;
+		else fallimenti++;
 
 		len += 5200;
 		free(substr);
@@ -41,16 +43,17 @@ int testSTORE() {
 	}
 
 	os_disconnect();
-	return n;
+	report();
 }
 
-int testRETRIEVE() {
+void testRETRIEVE() {
 	int i, j, n, len;
 	char *substr, *name;
 	printf("Test RETRIEVE\n");
 
 	len = 100;
 	for (i = 0; i < 20; i++) {
+		testtotali++;
 		substr = malloc(len);
 		substr = strcpy(substr, payload);
 		for (n = 0; n < i; n++) {
@@ -65,7 +68,8 @@ int testRETRIEVE() {
 
 		n = strcmp((char*)substr, (char*)os_retrieve(name));
 
-		if (n != 0) return n;
+		if (n == 0) successi++;
+		else fallimenti++;
 
 		len += 5200;
 		free(substr);
@@ -73,16 +77,17 @@ int testRETRIEVE() {
 	}
 
 	os_disconnect();
-	return n;
+	report();
 }
 
-int testDELETE() {
+void testDELETE() {
 	int i, j, n, len;
 	char *substr, *name;
 	printf("Test REMOVE\n");
 
 	len = 100;
 	for (i = 0; i < 20; i++) {
+		testtotali++;
 		substr = malloc(len);
 		substr = strcpy(substr, payload);
 		for (n = 0; n < i; n++) {
@@ -97,15 +102,16 @@ int testDELETE() {
 
 		n = os_delete(name);
 
-		if (n != 0) return n;
+		if (n == 0) successi++;
+		else fallimenti++;
 
 		len += 5200;
 		free(substr);
 		free(name);
 	}
-	
+
 	os_disconnect();
-	return n;
+	report();
 }
 
 int main(int argc, char *argv[]) {
@@ -113,14 +119,18 @@ int main(int argc, char *argv[]) {
 		printf("usage: %s name n\n", argv[0]);
 		return -1;
 	} else {
+		testtotali = 0;
+		successi = 0;
+		fallimenti = 0;
 		int n = os_connect(argv[1]);
 
 		if (n == 0) {
 			n = atoi(argv[2]);
-			if (n == 1) return testSTORE();
-			else if (n == 2) return testRETRIEVE();
-			else if (n == 3) return testDELETE();
+			if (n == 1) testSTORE();
+			else if (n == 2) testRETRIEVE();
+			else if (n == 3) testDELETE();
 			else printf("n deve essere tra 1 e 3 compresi\n");
+			return 0;
 		} else return -2;
 	}
 	return 0;
