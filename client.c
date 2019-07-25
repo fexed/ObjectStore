@@ -8,14 +8,13 @@ char *payload = "h9FqC9lYCgmACorQdu0IImWS8QPkdwvMAyjvNr1Sia0w0XSAjRn7NkJBrF5sh5s
 
 int successi, fallimenti, testtotali;
 
-void report() {
-	printf("Test effettuati\t%d\nSuccessi\t%d\nFallimenti\t%d\nFine", testtotali, successi, fallimenti);
+void report(char *type) {
+	printf("Test %s\n%s effettuati\t%d\n%s successi\t%d\n%s fallimenti\t%d\n", type, type, testtotali, type, successi, type, fallimenti);
 }
 
 void testSTORE() {
 	int i, j, n, len;
 	char *substr, *name;
-	printf("Test STORE\n");
 
 	len = 100;
 	for (i = 0; i < 20; i++) {
@@ -43,13 +42,12 @@ void testSTORE() {
 	}
 
 	os_disconnect();
-	report();
+	report("STORE");
 }
 
 void testRETRIEVE() {
 	int i, j, n, len;
 	char *substr, *name;
-	printf("Test RETRIEVE\n");
 
 	len = 100;
 	for (i = 0; i < 20; i++) {
@@ -77,13 +75,12 @@ void testRETRIEVE() {
 	}
 
 	os_disconnect();
-	report();
+	report("RETRIEVE");
 }
 
 void testDELETE() {
 	int i, j, n, len;
 	char *substr, *name;
-	printf("Test REMOVE\n");
 
 	len = 100;
 	for (i = 0; i < 20; i++) {
@@ -111,7 +108,7 @@ void testDELETE() {
 	}
 
 	os_disconnect();
-	report();
+	report("REMOVE");
 }
 
 int main(int argc, char *argv[]) {
