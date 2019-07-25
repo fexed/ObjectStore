@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <string.h>
 
+char *payload = "h9FqC9lYCgmACorQdu0IImWS8QPkdwvMAyjvNr1Sia0w0XSAjRn7NkJBrF5sh5s9SVtW59TFzwzVMzmw0RsveWhMmrRO3kPqBDD8";
+
 struct object {
 	char* name;
 	void* value;
@@ -14,14 +16,65 @@ struct object testobj = {"Nome", "Jwz8e9OxnMEKPtYeSlsz", 21};
 struct object testobj2 = {"Nome2", "Prova", 5};
 
 int testSTORE() {
-	int n = os_store(testobj.name, testobj.value, testobj.len);
+	int i, j, n, len;
+	char *substr, *name;
+	printf("Test STORE\n");
+
+	len = 100;
+	for (i = 0; i < 20; i++) {
+		substr = malloc(len);
+		substr = strcpy(substr, payload);
+		for (n = 0; n < i; n++) {
+			for (j = 0; j < 52; j++) substr = strcat(substr, payload);
+		}
+
+		name = malloc(sizeof(len)+4);
+		char strvalue[10];
+		sprintf(strvalue, "%d", (int)len);
+		name = strcpy(name, strvalue);
+		name = strcat(name, "Byte");
+
+		n = os_store(name, substr, len);
+
+		if (n != 0) return n;
+
+		len += 5200;
+		free(substr);
+		free(name);
+	}
+
 	os_disconnect();
 	return n;
 }
 
 int testRETRIEVE() {
-	int n = strcmp((char*)testobj.value, (char*)os_retrieve(testobj.name));
-			os_disconnect();
+	int i, j, n, len;
+	char *substr, *name;
+	printf("Test RETRIEVE\n");
+
+	len = 100;
+	for (i = 0; i < 20; i++) {
+		substr = malloc(len);
+		substr = strcpy(substr, payload);
+		for (n = 0; n < i; n++) {
+			for (j = 0; j < 52; j++) substr = strcat(substr, payload);
+		}
+
+		name = malloc(sizeof(len)+4);
+		char strvalue[10];
+		sprintf(strvalue, "%d", (int)len);
+		name = strcpy(name, strvalue);
+		name = strcat(name, "Byte");
+
+		n = strcmp((char*)substr, (char*)os_retrieve(name));
+
+		if (n != 0) return n;
+
+		len += 5200;
+		free(substr);
+		free(name);
+	}
+	os_disconnect();
 	return n;
 }
 
