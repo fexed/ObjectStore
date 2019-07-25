@@ -154,19 +154,20 @@ static void* clientHandler(void *arg) {
 		pthread_exit(NULL);
 	}
 
-	write(clientskt, "OK \n", 5);
+	write(clientskt, "OK \n", BUFFSIZE);
 	incrementaClientConnessi();
 
 	do {
 		free(buff);
 		buff = calloc(BUFFSIZE, sizeof(char));
 		read(clientskt, buff, BUFFSIZE);
+		printf("Ricevo\t%s\n", buff);
 
 		header = strtok(buff, " ");
 		if (strcmp(header, "STORE") == 0) {
 			dataname = strtok(NULL, " ");
 			datalen = atoi(strtok(NULL, " "));
-			datavalue = calloc(datalen, sizeof(char));
+			datavalue = malloc(datalen);
 			read(clientskt, datavalue, datalen);
 
 			filename = calloc(strlen(dirname)+strlen(dataname)+1, sizeof(char));
@@ -188,7 +189,7 @@ static void* clientHandler(void *arg) {
 				fwrite(datavalue, sizeof(char), datalen, file);
 				fclose(file);
 				free(filename);
-				write(clientskt, "OK \n", 5);
+				write(clientskt, "OK \n", BUFFSIZE);
 				incrementaStoreTotalSize((int) datalen);
 				incrementaOggettiMemorizzati();
 			}
@@ -246,7 +247,7 @@ static void* clientHandler(void *arg) {
 			free(filename);
 
 			if (value == 0) {
-				write(clientskt, "OK \n", 5);
+				write(clientskt, "OK \n", BUFFSIZE);
 				decrementaStoreTotalSize((int) datalen);
 				decrementaOggettiMemorizzati();
 			} else {
@@ -258,7 +259,7 @@ static void* clientHandler(void *arg) {
 				write(clientskt, buff, strlen(buff)+1);
 			}
 		} else if (strcmp(header, "LEAVE") == 0) {
-			write(clientskt, "OK \n", 5);
+			write(clientskt, "OK \n", BUFFSIZE);
 			//printf("%s\tDisconnesso\n", name);
 
 			close(clientskt);
@@ -267,7 +268,7 @@ static void* clientHandler(void *arg) {
 			pthread_exit(NULL);
 		} else {
 			//printf("%s\t%s\n", name, header);
-			write(clientskt, "KO Comando non riconosciuto \n", 30);
+			write(clientskt, "KO Comando non riconosciuto \n", BUFFSIZE);
 		}
 	} while(1); //TODO fix
 

@@ -31,10 +31,11 @@ void testSTORE() {
 		name = strcpy(name, strvalue);
 		name = strcat(name, "Byte");
 
-		n = os_store(name, substr, len);
+		//printf("Spedisco %s, %d:\t%.15s...\n", name, len, substr);
+		n = os_store(name, substr, strlen(substr));
 
 		if (n == 0) successi++;
-		else fallimenti++;
+		else /*fallimenti++;*/exit(n);
 
 		len += 5200;
 		free(substr);

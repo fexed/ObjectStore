@@ -49,11 +49,11 @@ int os_store(char *name, void *block, size_t len) {
 	buff = strcat(buff, name);
 	buff = strcat(buff, " ");
 	char strvalue[10];
-	sprintf(strvalue, "%d", (int)len);
+	sprintf(strvalue, "%ld", len);
 	buff = strcat(buff, strvalue);
-	buff = strcat(buff, " \n ");
-	//buff = strcat(buff, (char *)block);
+	buff = strcat(buff, " \n");
 
+	printf("Spedisco %s", buff);
 	write(skt, buff, BUFFSIZE);
 	write(skt, block, len);
 
@@ -62,7 +62,7 @@ int os_store(char *name, void *block, size_t len) {
 
 	if (value != 0) {
 		strtok(buff, " ");
-		printf("%s\n", strtok(NULL, "\n"));
+		printf("***%s ricevuto\n", strtok(NULL, "\n"));
 	}
 
 	return value;
