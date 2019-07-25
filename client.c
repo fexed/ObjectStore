@@ -12,9 +12,6 @@ struct object {
 	size_t len;
 };
 
-struct object testobj = {"Nome", "Jwz8e9OxnMEKPtYeSlsz", 21};
-struct object testobj2 = {"Nome2", "Prova", 5};
-
 int testSTORE() {
 	int i, j, n, len;
 	char *substr, *name;
@@ -74,20 +71,41 @@ int testRETRIEVE() {
 		free(substr);
 		free(name);
 	}
+
 	os_disconnect();
 	return n;
 }
 
 int testDELETE() {
-	int n = os_store(testobj2.name, testobj2.value, testobj2.len);
-	if (n == 0) {
-		n =  os_delete(testobj2.name);
-		os_disconnect();
-		return n;
-	} else {
-		os_disconnect();
-		return n;
+	int i, j, n, len;
+	char *substr, *name;
+	printf("Test REMOVE\n");
+
+	len = 100;
+	for (i = 0; i < 20; i++) {
+		substr = malloc(len);
+		substr = strcpy(substr, payload);
+		for (n = 0; n < i; n++) {
+			for (j = 0; j < 52; j++) substr = strcat(substr, payload);
+		}
+
+		name = malloc(sizeof(len)+4);
+		char strvalue[10];
+		sprintf(strvalue, "%d", (int)len);
+		name = strcpy(name, strvalue);
+		name = strcat(name, "Byte");
+
+		n = os_delete(name);
+
+		if (n != 0) return n;
+
+		len += 5200;
+		free(substr);
+		free(name);
 	}
+	
+	os_disconnect();
+	return n;
 }
 
 int main(int argc, char *argv[]) {
