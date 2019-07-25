@@ -36,7 +36,7 @@ void testSTORE() {
 		n = os_store(name, substr, strlen(substr));
 
 		if (n == 0) successi++;
-		else /*fallimenti++;*/exit(n);
+		else fallimenti++;
 
 		len += 5200;
 		free(substr);

@@ -58,11 +58,13 @@ int os_store(char *name, void *block, size_t len) {
 
 	//printf("Spedisco %s", buff);
 	write(skt, buff, BUFFSIZE);
-	write(skt, block, len);
-
+	
 	free(buff);
 	*buff = calloc(BUFFSIZE, sizeof(char));
 	buff = memset(buff, 0, BUFFSIZE);
+
+	write(skt, block, len);
+
 	read(skt, buff, BUFFSIZE);
 	value = strcmp(buff, "OK \n");
 
@@ -87,14 +89,14 @@ void *os_retrieve(char *name) {
 
 	write(skt, buff, BUFFSIZE);
 
-	read(skt, buff, BUFFSIZE);
+	recv(skt, buff, BUFFSIZE, MSG_WAITALL);
 	header = strtok(buff, " ");
 
 	if(strcmp(header, "DATA") == 0) {
 		len = atoi(strtok(NULL, " "));
 		datavalue = calloc(len, sizeof(char));
 
-		read(skt, datavalue, len);
+		recv(skt, datavalue, len, MSG_WAITALL);
 		return datavalue;
 	} else {
 		return (void *) strtok(NULL, "\n");

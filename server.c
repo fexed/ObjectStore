@@ -130,12 +130,14 @@ static void* clientHandler(void *arg) {
 	FILE* file;
 
 	incrementaThreadAttivi();
+	name = calloc(BUFFSIZE, sizeof(char));
+	name = memset(name, 0, BUFFSIZE);
 	buff = calloc(BUFFSIZE, sizeof(char));
 	buff = memset(buff, 0, BUFFSIZE);
 	read(clientskt, buff, BUFFSIZE);
 	header = strtok(buff, " ");
 	//TODO if header = REGISTER...
-	name = strtok(NULL, " ");
+	name = strcpy(name, strtok(NULL, " "));
 	dirname = malloc(sizeof(name)+sizeof("data/"));
 	dirname = strcpy(dirname, "data/");
 	dirname = strcat(dirname, name);
@@ -165,7 +167,7 @@ static void* clientHandler(void *arg) {
 		free(buff);
 		buff = calloc(BUFFSIZE, sizeof(char));
 		buff = memset(buff, 0, BUFFSIZE);
-		read(clientskt, buff, BUFFSIZE);
+		recv(clientskt, buff, BUFFSIZE, MSG_WAITALL);
 		//printf("Ricevo\t%s\n", buff);
 
 		header = strtok(buff, " ");
@@ -174,7 +176,7 @@ static void* clientHandler(void *arg) {
 			datalen = atoi(strtok(NULL, " "));
 			datavalue = malloc(datalen);
 			datavalue = memset(datavalue, 0, datalen);
-			read(clientskt, datavalue, datalen);
+			recv(clientskt, datavalue, datalen, MSG_WAITALL);
 
 			filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
 			filename = memset(filename, 0, sizeof(char)*(strlen(dirname)+strlen(dataname)+2));
@@ -276,12 +278,13 @@ static void* clientHandler(void *arg) {
 			write(clientskt, "OK \n", BUFFSIZE);
 			//printf("%s\tDisconnesso\n", name);
 			free(dirname);
+			free(name);
 			close(clientskt);
 			decrementaClientConnessi();
 			decrementaThreadAttivi();
 			pthread_exit(NULL);
 		} else {
-			//printf("%s\t%s\n", name, header);
+			printf("%s\t%s\n", name, buff);
 			write(clientskt, "KO Comando non riconosciuto \n", BUFFSIZE);
 		}
 	} while(1); //TODO fix
