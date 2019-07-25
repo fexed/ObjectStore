@@ -20,6 +20,7 @@ void testSTORE() {
 	for (i = 0; i < 20; i++) {
 		testtotali++;
 		substr = malloc(len);
+		memset(substr, 0, len);
 		substr = strcpy(substr, payload);
 		for (n = 0; n < i; n++) {
 			for (j = 0; j < 52; j++) substr = strcat(substr, payload);

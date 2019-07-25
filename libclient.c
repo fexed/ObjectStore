@@ -45,6 +45,7 @@ int os_store(char *name, void *block, size_t len) {
 	char *buff = calloc(BUFFSIZE, sizeof(char));
 	int value;
 
+	memset(buff, 0, BUFFSIZE);
 	buff = strcpy(buff, "STORE ");
 	buff = strcat(buff, name);
 	buff = strcat(buff, " ");
@@ -64,7 +65,6 @@ int os_store(char *name, void *block, size_t len) {
 		strtok(buff, " ");
 		printf("***%s ricevuto\n", strtok(NULL, "\n"));
 	}
-
 	return value;
 }
 

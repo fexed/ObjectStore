@@ -149,7 +149,7 @@ static void* clientHandler(void *arg) {
 		sprintf(strvalue, "%d", value);
 		buff = strcat(buff, strvalue);
 		buff = strcat(buff, " \n");
-		write(clientskt, buff, strlen(buff)+1);
+		write(clientskt, buff, BUFFSIZE);
 		decrementaThreadAttivi();
 		pthread_exit(NULL);
 	}
@@ -160,6 +160,7 @@ static void* clientHandler(void *arg) {
 	do {
 		free(buff);
 		buff = calloc(BUFFSIZE, sizeof(char));
+		buff = memset(buff, 0, BUFFSIZE);
 		read(clientskt, buff, BUFFSIZE);
 		printf("Ricevo\t%s\n", buff);
 
@@ -168,6 +169,7 @@ static void* clientHandler(void *arg) {
 			dataname = strtok(NULL, " ");
 			datalen = atoi(strtok(NULL, " "));
 			datavalue = malloc(datalen);
+			memset(datavalue, 0, datalen);
 			read(clientskt, datavalue, datalen);
 
 			filename = calloc(strlen(dirname)+strlen(dataname)+1, sizeof(char));
@@ -180,10 +182,11 @@ static void* clientHandler(void *arg) {
 				free(filename);
 				free(buff);
 				buff = calloc(BUFFSIZE, sizeof(char));
+				memset(buff, 0, BUFFSIZE);
 				buff = strcpy(buff, "KO Errore: ");
 				buff = strcat(buff, strerror(errno));
 				buff = strcat(buff, " \n");
-				write(clientskt, buff, strlen(buff)+1);
+				write(clientskt, buff, BUFFSIZE);
 			} else {
 				fwrite(&datalen, sizeof(size_t), 1, file);
 				fwrite(datavalue, sizeof(char), datalen, file);
@@ -206,20 +209,23 @@ static void* clientHandler(void *arg) {
 				free(filename);
 				free(buff);
 				buff = calloc(BUFFSIZE, sizeof(char));
+				memset(buff, 0, BUFFSIZE);
 				buff = strcpy(buff, "KO Errore: ");
 				buff = strcat(buff, strerror(errno));
 				buff = strcat(buff, " \n");
-				write(clientskt, buff, strlen(buff)+1);
+				write(clientskt, buff, BUFFSIZE);
 			} else {
 				//datalenr = calloc(1, sizeof(size_t));
 				fread(&datalen, sizeof(size_t), 1, file);
 				datavalue = calloc(1, datalen);
+				memset(datavalue, 0, datalen);
 				fread(datavalue, datalen, 1, file);
 				fclose(file);
 				free(filename);
 
 				free(buff);
 				buff = calloc(BUFFSIZE, sizeof(char));
+				memset(buff, 0, BUFFSIZE);
 				buff = strcpy(buff, "DATA ");
 				char strvalue[10];
 				sprintf(strvalue, "%ld", datalen);
@@ -253,6 +259,7 @@ static void* clientHandler(void *arg) {
 			} else {
 				free(buff);
 				buff = calloc(BUFFSIZE, sizeof(char));
+				memset(buff, 0, BUFFSIZE);
 				buff = strcpy(buff, "KO Errore: ");
 				buff = strcat(buff, strerror(errno));
 				buff = strcat(buff, " \n");
