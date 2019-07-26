@@ -9,7 +9,7 @@ char *payload = "h9FqC9lYCgmACorQdu0IImWS8QPkdwvMAyjvNr1Sia0w0XSAjRn7NkJBrF5sh5s
 int successi, fallimenti, testtotali;
 
 void report(char *type) {
-	printf("Test %s\n%s effettuati\t%d\n%s successi\t%d\n%s fallimenti\t%d\n", type, type, testtotali, type, successi, type, fallimenti);
+	printf("Test:%s\n%s DO:%d\n%s OK:%d\n%s KO:%d\n", type, type, testtotali, type, successi, type, fallimenti);
 }
 
 void testSTORE() {

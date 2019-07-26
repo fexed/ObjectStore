@@ -8,7 +8,7 @@ echo "" > testout.log
 
 echo "STORE"
 
-for i in {0..50}
+for i in {1..50}
 do
 	./client $i 1 >> $i.log &
 	pids[$i]=$!
@@ -20,7 +20,7 @@ done
 
 echo "RETRIEVE"
 
-for i in {0..29}
+for i in {1..29}
 do
 	./client $i 2 >> $i.log &
 	pids[$i]=$!
@@ -44,7 +44,7 @@ kill -10 $srvpid
 echo "Chiudo il server"
 kill -2 $srvpid
 
-for i in {0..10}
+for i in {1..50}
 do
 	cat $i.log >> testout.log
 	rm $i.log

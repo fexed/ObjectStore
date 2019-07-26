@@ -37,7 +37,7 @@ void cleanupserver() {
 
 static void signalHandler(int signum) {
 	if (signum == SIGUSR1) {
-		printf("threadAttivi\t\t%d\nclientConnessi\t\t%d\noggettiMemorizzati\t%d\nstoreTotalSize\t\t%d\n", threads, clientConnessi, oggettiMemorizzati, storeTotalSize);
+		printf("threadAttivi\t\t%d\nclientConnessi\t\t%d\noggettiMemorizzati\t%d\nstoreTotalSize\t\t%d Byte\n", threads, clientConnessi, oggettiMemorizzati, storeTotalSize);
 	} else if (signum == SIGPIPE) {
 	} else {
 		exit(signum);
