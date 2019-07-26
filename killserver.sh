@@ -1,2 +1,2 @@
 srvpid=$(pidof ./server)
-kill -2 $srvpid
+kill -3 $srvpid
