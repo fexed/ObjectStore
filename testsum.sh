@@ -40,3 +40,6 @@ echo ---
 nstore=$(grep "Errore" testout.log | cut -d':' -f 2 | wc -l)
 echo Lista errori $nstore
 grep "Errore" testout.log | cut -d':' -f 2
+
+srvpid=$(pidof ./server)
+kill -10 $srvpid

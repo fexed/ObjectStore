@@ -19,7 +19,7 @@
 				perror(str); \
 		}
 
-volatile int clientConnessi, oggettiMemorizzati, storeTotalSize, threads;
+volatile sig_atomic_t clientConnessi, oggettiMemorizzati, storeTotalSize, threads;
 int skt, sktAccepted;
 struct sockaddr_un skta;
 struct sigaction s;
@@ -38,7 +38,7 @@ void cleanupserver() {
 static void signalHandler(int signum) {
 	if (signum == SIGUSR1) {
 		printf("threadAttivi\t\t%d\nclientConnessi\t\t%d\noggettiMemorizzati\t%d\nstoreTotalSize\t\t%d Byte\n", threads, clientConnessi, oggettiMemorizzati, storeTotalSize);
-	} else if (signum == SIGPIPE) {
+	} else if (signum == SIGPIPE) { //ignore
 	} else {
 		exit(signum);
 	}
@@ -49,8 +49,6 @@ int startupserver() {
 	memset(&s, 0, sizeof(s));
 	s.sa_handler = signalHandler;
 	retval = sigaction(SIGUSR1, &s, NULL);
-	if (retval != 0) return retval;
-	retval = sigaction(SIGINT, &s, NULL);
 	if (retval != 0) return retval;
 	retval = sigaction(SIGPIPE, &s, NULL);
 	if (retval != 0) return retval;
@@ -120,6 +118,14 @@ void decrementaThreadAttivi() {
 	pthread_mutex_unlock(&threadAttiviMutex);
 }
 
+void mask_sign() {
+	sigset_t mask;
+	sigfillset(&mask);
+	//sigaddset(&mask, SIGUSR1);
+	pthread_sigmask(SIG_SETMASK, &mask, NULL);
+
+}
+
 static void* clientHandler(void *arg) {
 	int clientskt = (int) arg;
 	int value;
@@ -129,6 +135,7 @@ static void* clientHandler(void *arg) {
 	size_t datalen;
 	FILE* file;
 
+	mask_sign();
 	incrementaThreadAttivi();
 	name = calloc(BUFFSIZE, sizeof(char));
 	name = memset(name, 0, BUFFSIZE);
@@ -136,163 +143,168 @@ static void* clientHandler(void *arg) {
 	buff = memset(buff, 0, BUFFSIZE);
 	read(clientskt, buff, BUFFSIZE);
 	header = strtok(buff, " ");
-	//TODO if header = REGISTER...
-	name = strcpy(name, strtok(NULL, " "));
-	dirname = malloc(sizeof(name)+sizeof("data/"));
-	dirname = strcpy(dirname, "data/");
-	dirname = strcat(dirname, name);
-	//printf("%s\tConnesso\n", name);
 
-	value = mkdir(dirname, 0700);
-	if (value != 0 && errno != EEXIST) {
-		free(buff);
-		buff = calloc(BUFFSIZE, sizeof(char));
-		buff = strcpy(buff, "KO Errore: ");
-		buff = strcat(buff, strerror(errno));
-		buff = strcat(buff, " \n");
-		char strvalue[10];
-		sprintf(strvalue, "%d", value);
-		buff = strcat(buff, strvalue);
-		buff = strcat(buff, " \n");
-		write(clientskt, buff, BUFFSIZE);
-		free(dirname);
+	if (header != NULL && strcmp(header, "REGISTER") == 0) {
+		name = strcpy(name, strtok(NULL, " "));
+		dirname = malloc(sizeof(name)+sizeof("data/"));
+		dirname = strcpy(dirname, "data/");
+		dirname = strcat(dirname, name);
+		//printf("%s\tConnesso\n", name);
+
+		value = mkdir(dirname, 0700);
+		if (value != 0 && errno != EEXIST) {
+			free(buff);
+			buff = calloc(BUFFSIZE, sizeof(char));
+			buff = strcpy(buff, "KO Errore: ");
+			buff = strcat(buff, strerror(errno));
+			buff = strcat(buff, " \n");
+			char strvalue[10];
+			sprintf(strvalue, "%d", value);
+			buff = strcat(buff, strvalue);
+			buff = strcat(buff, " \n");
+			write(clientskt, buff, BUFFSIZE);
+			free(dirname);
+			decrementaThreadAttivi();
+			pthread_exit(NULL);
+		}
+
+		write(clientskt, "OK \n", BUFFSIZE);
+		incrementaClientConnessi();
+
+		do {
+			free(buff);
+			buff = calloc(BUFFSIZE, sizeof(char));
+			buff = memset(buff, 0, BUFFSIZE);
+			recv(clientskt, buff, BUFFSIZE, MSG_WAITALL);
+			//printf("Ricevo\t%s\n", buff);
+
+			header = strtok(buff, " ");
+			if (strcmp(header, "STORE") == 0) {
+				dataname = strtok(NULL, " ");
+				datalen = atoi(strtok(NULL, " "));
+				datavalue = malloc(datalen);
+				datavalue = memset(datavalue, 0, datalen);
+				recv(clientskt, datavalue, datalen, MSG_WAITALL);
+
+				filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
+				filename = memset(filename, 0, sizeof(char)*(strlen(dirname)+strlen(dataname)+2));
+				filename = strcpy(filename, dirname);
+				filename = strcat(filename, "/");
+				filename = strcat(filename, dataname);
+				file = fopen(filename, "w");
+
+				if (file == NULL) {
+					free(filename);
+					free(buff);
+					free(datavalue);
+					buff = calloc(BUFFSIZE, sizeof(char));
+					memset(buff, 0, BUFFSIZE);
+					buff = strcpy(buff, "KO Errore: ");
+					buff = strcat(buff, strerror(errno));
+					buff = strcat(buff, " \n");
+					write(clientskt, buff, BUFFSIZE);
+				} else {
+					fwrite(&datalen, sizeof(size_t), 1, file);
+					fwrite(datavalue, sizeof(char), datalen, file);
+					fclose(file);
+					free(filename);
+					free(datavalue);
+					write(clientskt, "OK \n", BUFFSIZE);
+					incrementaStoreTotalSize((int) datalen);
+					incrementaOggettiMemorizzati();
+				}
+			} else if (strcmp(header, "RETRIEVE") == 0) {
+				dataname = strtok(NULL, " ");
+
+				filename = calloc(strlen(dirname)+strlen(dataname)+1, sizeof(char));
+				filename = strcpy(filename, dirname);
+				filename = strcat(filename, "/");
+				filename = strcat(filename, dataname);
+				file = fopen(filename, "r");
+
+				if (file == NULL) {
+					free(filename);
+					free(buff);
+					buff = calloc(BUFFSIZE, sizeof(char));
+					memset(buff, 0, BUFFSIZE);
+					buff = strcpy(buff, "KO Errore: ");
+					buff = strcat(buff, strerror(errno));
+					buff = strcat(buff, " \n");
+					write(clientskt, buff, BUFFSIZE);
+				} else {
+					//datalenr = calloc(1, sizeof(size_t));
+					fread(&datalen, sizeof(size_t), 1, file);
+					datavalue = calloc(1, datalen);
+					memset(datavalue, 0, datalen);
+					fread(datavalue, datalen, 1, file);
+					fclose(file);
+					free(filename);
+
+					free(buff);
+					buff = calloc(BUFFSIZE, sizeof(char));
+					memset(buff, 0, BUFFSIZE);
+					buff = strcpy(buff, "DATA ");
+					char strvalue[10];
+					sprintf(strvalue, "%ld", datalen);
+					buff = strcat(buff, strvalue);
+					buff = strcat(buff, " \n");
+
+					write(clientskt, buff, BUFFSIZE);
+					write(clientskt, datavalue, datalen);
+				}
+			} else if (strcmp(header, "DELETE") == 0) {
+				dataname = strtok(NULL, " ");
+				
+				filename = calloc(strlen(dirname)+strlen(dataname)+1, sizeof(char));
+				filename = strcpy(filename, dirname);
+				filename = strcat(filename, "/");
+				filename = strcat(filename, dataname);
+
+				file = fopen(filename, "r");
+				if (file != NULL) {
+					fread(&datalen, sizeof(size_t), 1, file);
+					fclose(file);
+				}
+
+				value = remove(filename);
+				free(filename);
+
+				if (value == 0) {
+					write(clientskt, "OK \n", BUFFSIZE);
+					decrementaStoreTotalSize((int) datalen);
+					decrementaOggettiMemorizzati();
+				} else {
+					free(buff);
+					buff = calloc(BUFFSIZE, sizeof(char));
+					memset(buff, 0, BUFFSIZE);
+					buff = strcpy(buff, "KO Errore: ");
+					buff = strcat(buff, strerror(errno));
+					buff = strcat(buff, " \n");
+					write(clientskt, buff, strlen(buff)+1);
+				}
+			} else if (strcmp(header, "LEAVE") == 0) {
+				write(clientskt, "OK \n", BUFFSIZE);
+				//printf("%s\tDisconnesso\n", name);
+				free(dirname);
+				free(name);
+				close(clientskt);
+				decrementaClientConnessi();
+				decrementaThreadAttivi();
+				pthread_exit(NULL);
+			} else {
+				printf("%s\t%s\n", name, buff);
+				write(clientskt, "KO Comando non riconosciuto \n", BUFFSIZE);
+			}
+		} while(1); //TODO fix
+		close(clientskt);
+		decrementaClientConnessi();
+		decrementaThreadAttivi();
+		pthread_exit(NULL);
+	} else {
+		close(clientskt);
 		decrementaThreadAttivi();
 		pthread_exit(NULL);
 	}
-
-	write(clientskt, "OK \n", BUFFSIZE);
-	incrementaClientConnessi();
-
-	do {
-		free(buff);
-		buff = calloc(BUFFSIZE, sizeof(char));
-		buff = memset(buff, 0, BUFFSIZE);
-		recv(clientskt, buff, BUFFSIZE, MSG_WAITALL);
-		//printf("Ricevo\t%s\n", buff);
-
-		header = strtok(buff, " ");
-		if (strcmp(header, "STORE") == 0) {
-			dataname = strtok(NULL, " ");
-			datalen = atoi(strtok(NULL, " "));
-			datavalue = malloc(datalen);
-			datavalue = memset(datavalue, 0, datalen);
-			recv(clientskt, datavalue, datalen, MSG_WAITALL);
-
-			filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
-			filename = memset(filename, 0, sizeof(char)*(strlen(dirname)+strlen(dataname)+2));
-			filename = strcpy(filename, dirname);
-			filename = strcat(filename, "/");
-			filename = strcat(filename, dataname);
-			file = fopen(filename, "w");
-
-			if (file == NULL) {
-				free(filename);
-				free(buff);
-				free(datavalue);
-				buff = calloc(BUFFSIZE, sizeof(char));
-				memset(buff, 0, BUFFSIZE);
-				buff = strcpy(buff, "KO Errore: ");
-				buff = strcat(buff, strerror(errno));
-				buff = strcat(buff, " \n");
-				write(clientskt, buff, BUFFSIZE);
-			} else {
-				fwrite(&datalen, sizeof(size_t), 1, file);
-				fwrite(datavalue, sizeof(char), datalen, file);
-				fclose(file);
-				free(filename);
-				free(datavalue);
-				write(clientskt, "OK \n", BUFFSIZE);
-				incrementaStoreTotalSize((int) datalen);
-				incrementaOggettiMemorizzati();
-			}
-		} else if (strcmp(header, "RETRIEVE") == 0) {
-			dataname = strtok(NULL, " ");
-
-			filename = calloc(strlen(dirname)+strlen(dataname)+1, sizeof(char));
-			filename = strcpy(filename, dirname);
-			filename = strcat(filename, "/");
-			filename = strcat(filename, dataname);
-			file = fopen(filename, "r");
-
-			if (file == NULL) {
-				free(filename);
-				free(buff);
-				buff = calloc(BUFFSIZE, sizeof(char));
-				memset(buff, 0, BUFFSIZE);
-				buff = strcpy(buff, "KO Errore: ");
-				buff = strcat(buff, strerror(errno));
-				buff = strcat(buff, " \n");
-				write(clientskt, buff, BUFFSIZE);
-			} else {
-				//datalenr = calloc(1, sizeof(size_t));
-				fread(&datalen, sizeof(size_t), 1, file);
-				datavalue = calloc(1, datalen);
-				memset(datavalue, 0, datalen);
-				fread(datavalue, datalen, 1, file);
-				fclose(file);
-				free(filename);
-
-				free(buff);
-				buff = calloc(BUFFSIZE, sizeof(char));
-				memset(buff, 0, BUFFSIZE);
-				buff = strcpy(buff, "DATA ");
-				char strvalue[10];
-				sprintf(strvalue, "%ld", datalen);
-				buff = strcat(buff, strvalue);
-				buff = strcat(buff, " \n");
-
-				write(clientskt, buff, BUFFSIZE);
-				write(clientskt, datavalue, datalen);
-			}
-		} else if (strcmp(header, "DELETE") == 0) {
-			dataname = strtok(NULL, " ");
-			
-			filename = calloc(strlen(dirname)+strlen(dataname)+1, sizeof(char));
-			filename = strcpy(filename, dirname);
-			filename = strcat(filename, "/");
-			filename = strcat(filename, dataname);
-
-			file = fopen(filename, "r");
-			if (file != NULL) {
-				fread(&datalen, sizeof(size_t), 1, file);
-				fclose(file);
-			}
-
-			value = remove(filename);
-			free(filename);
-
-			if (value == 0) {
-				write(clientskt, "OK \n", BUFFSIZE);
-				decrementaStoreTotalSize((int) datalen);
-				decrementaOggettiMemorizzati();
-			} else {
-				free(buff);
-				buff = calloc(BUFFSIZE, sizeof(char));
-				memset(buff, 0, BUFFSIZE);
-				buff = strcpy(buff, "KO Errore: ");
-				buff = strcat(buff, strerror(errno));
-				buff = strcat(buff, " \n");
-				write(clientskt, buff, strlen(buff)+1);
-			}
-		} else if (strcmp(header, "LEAVE") == 0) {
-			write(clientskt, "OK \n", BUFFSIZE);
-			//printf("%s\tDisconnesso\n", name);
-			free(dirname);
-			free(name);
-			close(clientskt);
-			decrementaClientConnessi();
-			decrementaThreadAttivi();
-			pthread_exit(NULL);
-		} else {
-			printf("%s\t%s\n", name, buff);
-			write(clientskt, "KO Comando non riconosciuto \n", BUFFSIZE);
-		}
-	} while(1); //TODO fix
-
-	close(clientskt);
-	decrementaClientConnessi();
-	decrementaThreadAttivi();
-	pthread_exit(NULL);
 }
 
 int main () {
