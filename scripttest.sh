@@ -6,9 +6,36 @@ echo "Inizio test"
 
 echo "" > testout.log
 
-for i in {0..10}
+echo "STORE"
+
+for i in {0..50}
 do
-	./client $i 1 > $i.log &
+	./client $i 1 >> $i.log &
+	pids[$i]=$!
+done
+
+for pid in ${pids[*]}; do
+	wait $pid
+done
+
+echo "RETRIEVE"
+
+for i in {0..29}
+do
+	./client $i 2 >> $i.log &
+	pids[$i]=$!
+done
+
+echo "DELETE"
+
+for i in {30..50}
+do
+	./client $i 3 >> $i.log &
+	pids[$i]=$!
+done
+
+for pid in ${pids[*]}; do
+	wait $pid
 done
 
 echo "Segnalo SIGUSR1 al server"
