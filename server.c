@@ -29,50 +29,6 @@ static pthread_mutex_t threadAttiviMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t oggettiMemorizzatiMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t storeTotalSizeMutex = PTHREAD_MUTEX_INITIALIZER;
 
-void cleanupserver() {
-	close(skt);
-	close(sktAccepted);
-	unlink(SOCKETNAME);
-}
-
-static void signalHandler(int signum) {
-	if (signum == SIGUSR1) {
-		printf("threadAttivi\t\t%d\nclientConnessi\t\t%d\noggettiMemorizzati\t%d\nstoreTotalSize\t\t%d Byte\n", threads, clientConnessi, oggettiMemorizzati, storeTotalSize);
-	} else if (signum == SIGPIPE) { //ignore
-	} else {
-		cleanupserver();
-		exit(signum);
-	}
-}
-
-int startupserver() {
-	int retval;
-	memset(&s, 0, sizeof(s));
-	s.sa_handler = signalHandler;
-	retval = sigaction(SIGUSR1, &s, NULL);
-	if (retval != 0) return retval;
-	retval = sigaction(SIGPIPE, &s, NULL);
-	if (retval != 0) return retval;
-	retval = sigaction(SIGINT, &s, NULL);
-	if (retval != 0) return retval;
-	
-	strncpy(skta.sun_path, SOCKETNAME, UNIX_PATH_MAX);
-	skta.sun_family = AF_UNIX;
-	skt = socket(AF_UNIX, SOCK_STREAM, 0);
-	retval = bind(skt, (struct sockaddr *)&skta, sizeof(skta));
-	if (retval != 0) return retval;
-
-	mkdir("data", 0700);
-	atexit(cleanupserver);
-
-	clientConnessi = 0;
-	threads = 0;
-	oggettiMemorizzati = 0;
-	storeTotalSize = 0;
-
-	return retval;
-}
-
 void incrementaOggettiMemorizzati() {
 	pthread_mutex_lock(&oggettiMemorizzatiMutex);
 	oggettiMemorizzati++;
@@ -144,7 +100,7 @@ static void* clientHandler(void *arg) {
 	name = memset(name, 0, BUFFSIZE);
 	buff = calloc(BUFFSIZE, sizeof(char));
 	buff = memset(buff, 0, BUFFSIZE);
-	read(clientskt, buff, BUFFSIZE);
+	recv(clientskt, buff, BUFFSIZE, MSG_WAITALL);
 	header = strtok(buff, "\n");
 
 	if (header != NULL && strstr(header, "REGISTER") != NULL) {
@@ -153,7 +109,6 @@ static void* clientHandler(void *arg) {
 		dirname = malloc(sizeof(name)+sizeof("data/"));
 		dirname = strcpy(dirname, "data/");
 		dirname = strcat(dirname, name);
-		//printf("%s\tConnesso\n", name);
 
 		value = mkdir(dirname, 0700);
 		if (value != 0 && errno != EEXIST) {
@@ -180,8 +135,6 @@ static void* clientHandler(void *arg) {
 			buff = calloc(BUFFSIZE, sizeof(char));
 			buff = memset(buff, 0, BUFFSIZE);
 			recv(clientskt, buff, BUFFSIZE, MSG_WAITALL);
-			
-			//printf("%s:\t%s", name, buff);
 
 			header = strtok(buff, "\n");
 			if (strstr(header, "STORE") != NULL) {
@@ -239,7 +192,6 @@ static void* clientHandler(void *arg) {
 					buff = strcat(buff, " \n");
 					write(clientskt, buff, BUFFSIZE);
 				} else {
-					//datalenr = calloc(1, sizeof(size_t));
 					fread(&datalen, sizeof(size_t), 1, file);
 					datavalue = calloc(1, datalen);
 					memset(datavalue, 0, datalen);
@@ -293,7 +245,7 @@ static void* clientHandler(void *arg) {
 				}
 			} else if (strstr(header, "LEAVE") != NULL) {
 				write(clientskt, "OK \n", BUFFSIZE);
-				//printf("%s\tDisconnesso\n", name);
+
 				free(dirname);
 				free(name);
 				close(clientskt);
@@ -317,6 +269,52 @@ static void* clientHandler(void *arg) {
 		decrementaThreadAttivi();
 		pthread_exit(NULL);
 	}
+}
+
+
+void cleanupserver() {
+	close(skt);
+	close(sktAccepted);
+	unlink(SOCKETNAME);
+}
+
+static void signalHandler(int signum) {
+	if (signum == SIGUSR1) {
+		printf("threadAttivi\t\t%d\nclientConnessi\t\t%d\noggettiMemorizzati\t%d\nstoreTotalSize\t\t%d Byte\n", threads, clientConnessi, oggettiMemorizzati, storeTotalSize);
+	} else if (signum == SIGPIPE) { //ignore
+	} else {
+		cleanupserver();
+		exit(signum);
+	}
+}
+
+int startupserver() {
+	int retval;
+
+	memset(&s, 0, sizeof(s));
+	s.sa_handler = signalHandler;
+	retval = sigaction(SIGUSR1, &s, NULL);
+	if (retval != 0) return retval;
+	retval = sigaction(SIGPIPE, &s, NULL);
+	if (retval != 0) return retval;
+	retval = sigaction(SIGINT, &s, NULL);
+	if (retval != 0) return retval;
+	
+	strncpy(skta.sun_path, SOCKETNAME, UNIX_PATH_MAX);
+	skta.sun_family = AF_UNIX;
+	skt = socket(AF_UNIX, SOCK_STREAM, 0);
+	retval = bind(skt, (struct sockaddr *)&skta, sizeof(skta));
+	if (retval != 0) return retval;
+
+	mkdir("data", 0700);
+	atexit(cleanupserver);
+
+	clientConnessi = 0;
+	threads = 0;
+	oggettiMemorizzati = 0;
+	storeTotalSize = 0;
+
+	return retval;
 }
 
 int main () {

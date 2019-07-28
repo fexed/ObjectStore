@@ -19,7 +19,7 @@ int os_connect(char *name){
 	skta.sun_family = AF_UNIX;
 	skt = socket(AF_UNIX, SOCK_STREAM, 0);
 	while(connect(skt, (struct sockaddr*)&skta, sizeof(skta)) == -1) {
-		if (errno == ENOENT) sleep(1); //socket non esiste
+		if (errno == ENOENT) sleep(1);
 		else return -1;
 	}
 
@@ -56,7 +56,6 @@ int os_store(char *name, void *block, size_t len) {
 	buff = strcat(buff, strvalue);
 	buff = strcat(buff, " \n");
 
-	//printf("Spedisco %s", buff);
 	write(skt, buff, BUFFSIZE);
 	
 	free(buff);
