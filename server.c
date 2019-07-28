@@ -223,7 +223,7 @@ static void* clientHandler(void *arg) {
 				strtok(buff, " ");
 				dataname = strtok(NULL, " ");
 
-				filename = calloc(strlen(dirname)+strlen(dataname)+1, sizeof(char));
+				filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
 				filename = strcpy(filename, dirname);
 				filename = strcat(filename, "/");
 				filename = strcat(filename, dataname);
@@ -258,12 +258,13 @@ static void* clientHandler(void *arg) {
 
 					write(clientskt, buff, BUFFSIZE);
 					write(clientskt, datavalue, datalen);
+					free(datavalue);
 				}
 			} else if (strstr(header, "DELETE") != NULL) {
 				strtok(buff, " ");
 				dataname = strtok(NULL, " ");
 
-				filename = calloc(strlen(dirname)+strlen(dataname)+1, sizeof(char));
+				filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
 				filename = strcpy(filename, dirname);
 				filename = strcat(filename, "/");
 				filename = strcat(filename, dataname);
@@ -296,6 +297,7 @@ static void* clientHandler(void *arg) {
 				free(dirname);
 				free(name);
 				close(clientskt);
+				free(buff);
 				decrementaClientConnessi();
 				decrementaThreadAttivi();
 				pthread_exit(NULL);
@@ -304,11 +306,13 @@ static void* clientHandler(void *arg) {
 				write(clientskt, "KO Comando non riconosciuto \n", BUFFSIZE);
 			}
 		} while(1); //TODO fix
+		free(buff);
 		close(clientskt);
 		decrementaClientConnessi();
 		decrementaThreadAttivi();
 		pthread_exit(NULL);
 	} else {
+		free(buff);
 		close(clientskt);
 		decrementaThreadAttivi();
 		pthread_exit(NULL);
