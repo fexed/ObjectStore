@@ -81,7 +81,7 @@ void incrementaOggettiMemorizzati() {
 
 void decrementaOggettiMemorizzati() {
 	pthread_mutex_lock(&oggettiMemorizzatiMutex);
-	oggettiMemorizzati++;
+	oggettiMemorizzati--;
 	pthread_mutex_unlock(&oggettiMemorizzatiMutex);
 }
 
