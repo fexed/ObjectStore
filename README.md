@@ -5,7 +5,7 @@ Lo studente dovrà realizzre un *object store* implementato come **sistema clien
 In particolare, sarà necessario implementare:
 - [ ] la **parte server** (object store) come eseguibile autonomo
 - [ ] una **libreria** destinata ad essere **incorporata nei client** che si **interfacci con l'object store utilizzando il protocollo definito sotto**
-- [ ] un **client di esempio** che usi la libreria per testare il funzionamento del sistema
+- [X] un **client di esempio** che usi la libreria per testare il funzionamento del sistema
 
 ## L'object store
 L'object store **è un eseguibile** il cui scopo è quello di **ricevere dai client delle richieste di memorizzare, recuperare, cancellare blocchi di dati dotati di nome**, detti "*oggetti*". L'object store
@@ -23,11 +23,11 @@ Il server **quando riceve un segnale termina** il prima possibile **lasciando l'
 
 ## La libreria di accesso
 La libreria lato client che fornisce l'accesso all'object store deve fornire all'applicazione cliente le seguenti funzioni
-- [ ] `int os_connect(char *name)` - **inizia la connessione all'object store**, registrando il cliente con il *name* dato. Restituisce *true* se la connessione ha avuto successo, *false* altrimenti. Notate che la connessione all'object store è globale per il client
-- [ ] `int os_store(char *name, void *block, size_t len)` - **richiede all'object store la memorizzazione dell'oggetto puntato da *block***, per una lunghezza *len*, con il nome *name*. Restituisce *true* se la memorizzazione ha avuto successo, *false* altrimenti
-- [ ] `void *os_retrieve(char *name)` - **recupera dall'object store l'oggetto precedentemente memorizzato sotto il nome *name***. Se il recupero ha avuto successo, restituisce un puntatore a un blocco di memoria, allocato dalla funzione, contenente i dati precedentemente memorizzati. In caso di errore, restituisce NULL
-- [ ] `int os_delete(char *name)` - **cancella l'oggetto di nome *name* precedentemente memorizzato**. Restituisce *true* se la cancellazione ha avuto successo, *false* altrimenti
-- [ ] `int os_disconnect()` - **chiude la connessione all'object store**. Restituisce *true* se la disconnessione ha avuto successo, *false* in caso contrario
+- [X] `int os_connect(char *name)` - **inizia la connessione all'object store**, registrando il cliente con il *name* dato. Restituisce *true* se la connessione ha avuto successo, *false* altrimenti. Notate che la connessione all'object store è globale per il client
+- [X] `int os_store(char *name, void *block, size_t len)` - **richiede all'object store la memorizzazione dell'oggetto puntato da *block***, per una lunghezza *len*, con il nome *name*. Restituisce *true* se la memorizzazione ha avuto successo, *false* altrimenti
+- [X] `void *os_retrieve(char *name)` - **recupera dall'object store l'oggetto precedentemente memorizzato sotto il nome *name***. Se il recupero ha avuto successo, restituisce un puntatore a un blocco di memoria, allocato dalla funzione, contenente i dati precedentemente memorizzati. In caso di errore, restituisce NULL
+- [X] `int os_delete(char *name)` - **cancella l'oggetto di nome *name* precedentemente memorizzato**. Restituisce *true* se la cancellazione ha avuto successo, *false* altrimenti
+- [X] `int os_disconnect()` - **chiude la connessione all'object store**. Restituisce *true* se la disconnessione ha avuto successo, *false* in caso contrario
 
 Tutte le funzioni di libreria **devono dialogare con il server tramite il protocollo definito sotto**. Gli eventuali **errori di comunicazione vanno gestiti e segnalati al chiamante** tramite valori di ritorno come indicato sopra.
 
@@ -37,28 +37,28 @@ Tutti i messaggi scambiati fra client e object store **hanno un formato basato s
 Tutte le comunicazioni sono iniziate dal client (*request*), e prevedono una risposta da parte dell'object store (*response*). Il response può contenere un *message* di testo libero, a discrezione dello studente, che specifica la causa di eventuali errori.
 
 In dettaglio, il protocollo prevede i seguenti messagi:
-- [ ] **Registrazione**: inviato dal cliente per registrarsi sull'object store; quest'ultimo risponde con l'esito dell'operazione
-  - Request: `REGISTER <name>\n`
-  - Response: `OK\n` (registrazione riuscita) oppure `KO <message>\n` (registrazione fallita)
+- [X] **Registrazione**: inviato dal cliente per registrarsi sull'object store; quest'ultimo risponde con l'esito dell'operazione
+  - Request: `REGISTER <name> \n`
+  - Response: `OK\n` (registrazione riuscita) oppure `KO <message> \n` (registrazione fallita)
 - [ ] **Memorizzazione**: inviato dal cliente per memorizzare un oggetto nel proprio spazio privato sull'object store; quest'ultimo risponde con l'esito dell'operazione
-  - Request: `STORE <name> <len>\n<data>` (in cui *data* è un blocco binario di lunghezza *len* bytes) 
-  - Response: `OK\n` (memorizzazione riuscita) oppure `KO <message>\n` (memorizzazione fallita)
+  - Request: `STORE <name> <len> \n <data>` (in cui *data* è un blocco binario di lunghezza *len* bytes) 
+  - Response: `OK\n` (memorizzazione riuscita) oppure `KO <message> \n` (memorizzazione fallita)
 - [ ] **Lettura**: inviato dal cliente per recuperare i dati di un oggetto precedentemente memorizzato nel proprio spazio privato sull'object store; quest'ultimo risponde con i dati richiesti, oppure con una segnalazione di errore
-  - Request: `RETRIEVE <name>\n` 
-  - Response: `DATA <len>\n<data>` (se l'operazione ha avuto successo, in cui *data* è un blocco binario di lunghezza *len* bytes) oppure `KO <message>\n` (in caso di fallimento)
+  - Request: `RETRIEVE <name> \n` 
+  - Response: `DATA <len> \n <data>` (se l'operazione ha avuto successo, in cui *data* è un blocco binario di lunghezza *len* bytes) oppure `KO <message> \n` (in caso di fallimento)
 - [ ] **Cancellazione**: inviato dal client per cancellare un oggetto memorizzato sull'object store; quest'ultimo risponde con una indicazione di successo
-  - Request: `DELETE <name>\n` 
-  - Response: `OK\n` (cancellazione riuscita) oppure `KO <message>\n` (cancellazione fallita)
-- [ ] **Disconnessione**: inviato dal client per chiudere in maniera ordinata la connessione verso l'object store; ha sempre successo
-  - Request: `LEAVE\n` 
-  - Response: `OK\n`
+  - Request: `DELETE <name> \n` 
+  - Response: `OK \n` (cancellazione riuscita) oppure `KO <message> \n` (cancellazione fallita)
+- [X] **Disconnessione**: inviato dal client per chiudere in maniera ordinata la connessione verso l'object store; ha sempre successo
+  - Request: `LEAVE \n` 
+  - Response: `OK \n`
   
 ### Test
 Il client di test deve **esercitare tutte le funzioni offerte dalla libreria**, con cui dovrà essere **linkato staticamente**. A tale scopo, dovrà essere in grado, in esecuzioni distinte, di:
-1. [ ] **creare e memorizzare oggetti**. Il client dovra **generare 20 oggetti**, di dimensioni crescenti da 100 byte a 100'000 byte, 
+1. [X] **creare e memorizzare oggetti**. Il client dovra **generare 20 oggetti**, di dimensioni crescenti da 100 byte a 100'000 byte, 
 **memorizzandoli sull'object store** con nomi convenzionali. Gli oggetti dovranno contenere dati "artificiali" facilmente verificabili (per esempio: byte di valore numerico consecutivo 0, 1, 2... oppure sequenze di 8 byte di valore 8, poi 9 byte di valore 9, 10 byte di valore 10 ecc., oppure più copie di una stringa di testo prefissata, ecc.)
-2. [ ] **recuperare oggetti verificando che i contenuti siano corretti**
-3. [ ] **cancellare oggetti**
+2. [X] **recuperare oggetti verificando che i contenuti siano corretti**
+3. [X] **cancellare oggetti**
 
   Il client riceverà come **argomento sulla riga di comando il nome cliente** da utilizzare nella connessione con l'object store, e un **numero nell'intervallo di 1-3 corrispondente alla batteria di test da effettuare** (come indicato sopra). Terminati i test della batteria richiesta, il client dovrà uscire, e stampare sul suo *stdout* un **breve rapporto sull'esito dei test** (numero di operazioni effettuate, numero di operazioni concluse con successo, numero di operazioni fallite, ecc.). Il formato di questo report è a discrezione dello studente.
 
