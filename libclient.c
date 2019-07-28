@@ -70,7 +70,7 @@ int os_store(char *name, void *block, size_t len) {
 
 	if (value != 0) {
 		strtok(buff, " ");
-		printf("***%s\n", strtok(NULL, "\n"));
+		printf("%s\n", strtok(NULL, "\n"));
 	}
 
 	free(buff);
@@ -99,7 +99,8 @@ void *os_retrieve(char *name) {
 		recv(skt, datavalue, len, MSG_WAITALL);
 		return datavalue;
 	} else {
-		return (void *) strtok(buff, "\n");
+		printf("%s\n", strtok(NULL, "\n"));
+		return NULL;
 	}
 }
 

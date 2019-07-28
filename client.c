@@ -50,6 +50,7 @@ void testSTORE() {
 void testRETRIEVE() {
 	int i, j, n, len;
 	char *substr, *name;
+	char *data;
 
 	len = 100;
 	for (i = 0; i < 20; i++) {
@@ -66,7 +67,9 @@ void testRETRIEVE() {
 		name = strcpy(name, strvalue);
 		name = strcat(name, "Byte");
 
-		n = strcmp((char*)substr, (char*)os_retrieve(name));
+		data = (char*)os_retrieve(name);
+		if (data != NULL) n = strcmp((char*)substr, data);
+		else n = -1;
 
 		if (n == 0) successi++;
 		else fallimenti++;
