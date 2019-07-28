@@ -12,7 +12,9 @@ all :
 clean :
 	rm -f client server libclient.a libclient.o objstore.sock testout.log
 	rm -rf data/
+	./killserver.sh
 
 test :
-	./scripttest.sh
-	./testsum.sh
+	@./scripttest.sh
+	@echo ""
+	@./testsum.sh

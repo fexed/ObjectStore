@@ -302,7 +302,7 @@ static void* clientHandler(void *arg) {
 				decrementaThreadAttivi();
 				pthread_exit(NULL);
 			} else {
-				printf("%s\t%s\n", name, buff);
+				//printf("%s\t%s\n", name, buff);
 				write(clientskt, "KO Comando non riconosciuto \n", BUFFSIZE);
 			}
 		} while(1); //TODO fix

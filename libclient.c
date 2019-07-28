@@ -99,7 +99,7 @@ void *os_retrieve(char *name) {
 		recv(skt, datavalue, len, MSG_WAITALL);
 		return datavalue;
 	} else {
-		return (void *) strtok(NULL, "\n");
+		return (void *) strtok(buff, "\n");
 	}
 }
 
