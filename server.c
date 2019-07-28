@@ -52,6 +52,8 @@ int startupserver() {
 	if (retval != 0) return retval;
 	retval = sigaction(SIGPIPE, &s, NULL);
 	if (retval != 0) return retval;
+	retval = sigaction(SIGSEGV, &s, NULL);
+	if (retval != 0) return retval;
 	
 	strncpy(skta.sun_path, SOCKETNAME, UNIX_PATH_MAX);
 	skta.sun_family = AF_UNIX;
@@ -142,9 +144,10 @@ static void* clientHandler(void *arg) {
 	buff = calloc(BUFFSIZE, sizeof(char));
 	buff = memset(buff, 0, BUFFSIZE);
 	read(clientskt, buff, BUFFSIZE);
-	header = strtok(buff, " ");
+	header = strtok(buff, "\n");
 
-	if (header != NULL && strcmp(header, "REGISTER") == 0) {
+	if (header != NULL && strstr(header, "REGISTER") != NULL) {
+		strtok(buff, " ");
 		name = strcpy(name, strtok(NULL, " "));
 		dirname = malloc(sizeof(name)+sizeof("data/"));
 		dirname = strcpy(dirname, "data/");
@@ -178,8 +181,9 @@ static void* clientHandler(void *arg) {
 			recv(clientskt, buff, BUFFSIZE, MSG_WAITALL);
 			//printf("Ricevo\t%s\n", buff);
 
-			header = strtok(buff, " ");
-			if (strcmp(header, "STORE") == 0) {
+			header = strtok(buff, "\n");
+			if (strstr(header, "STORE") != NULL) {
+				strtok(buff, " ");
 				dataname = strtok(NULL, " ");
 				datalen = atoi(strtok(NULL, " "));
 				datavalue = malloc(datalen);
@@ -213,9 +217,10 @@ static void* clientHandler(void *arg) {
 					incrementaStoreTotalSize((int) datalen);
 					incrementaOggettiMemorizzati();
 				}
-			} else if (strcmp(header, "RETRIEVE") == 0) {
+			} else if (strstr(header, "RETRIEVE") != NULL) {
+				strtok(buff, " ");
 				dataname = strtok(NULL, " ");
-
+				
 				filename = calloc(strlen(dirname)+strlen(dataname)+1, sizeof(char));
 				filename = strcpy(filename, dirname);
 				filename = strcat(filename, "/");
@@ -252,9 +257,10 @@ static void* clientHandler(void *arg) {
 					write(clientskt, buff, BUFFSIZE);
 					write(clientskt, datavalue, datalen);
 				}
-			} else if (strcmp(header, "DELETE") == 0) {
+			} else if (strstr(header, "DELETE") != NULL) {
+				strtok(buff, " ");
 				dataname = strtok(NULL, " ");
-				
+
 				filename = calloc(strlen(dirname)+strlen(dataname)+1, sizeof(char));
 				filename = strcpy(filename, dirname);
 				filename = strcat(filename, "/");
@@ -282,7 +288,7 @@ static void* clientHandler(void *arg) {
 					buff = strcat(buff, " \n");
 					write(clientskt, buff, strlen(buff)+1);
 				}
-			} else if (strcmp(header, "LEAVE") == 0) {
+			} else if (strstr(header, "LEAVE") != NULL) {
 				write(clientskt, "OK \n", BUFFSIZE);
 				//printf("%s\tDisconnesso\n", name);
 				free(dirname);

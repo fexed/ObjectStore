@@ -1,6 +1,5 @@
 #!/bin/bash
 ./server &
-srvpid=$!
 
 echo "Inizio test"
 
