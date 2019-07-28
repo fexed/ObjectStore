@@ -181,8 +181,7 @@ static void* clientHandler(void *arg) {
 			buff = memset(buff, 0, BUFFSIZE);
 			recv(clientskt, buff, BUFFSIZE, MSG_WAITALL);
 			
-			printf("%s:\t%s", name, buff);
-			//printf("Ricevo\t%s\n", buff);
+			//printf("%s:\t%s", name, buff);
 
 			header = strtok(buff, "\n");
 			if (strstr(header, "STORE") != NULL) {
