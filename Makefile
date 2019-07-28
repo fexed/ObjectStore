@@ -15,3 +15,4 @@ clean :
 
 test :
 	./scripttest.sh
+	./testsum.sh

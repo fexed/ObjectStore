@@ -36,10 +36,12 @@ echo REMOVE OK	$nstore
 nstore=$(grep "REMOVE KO" testout.log | cut -d':' -f 2 | paste -sd+ | bc)
 echo REMOVE KO	$nstore
 
-echo ---
+echo ----
 nstore=$(grep "Errore" testout.log | cut -d':' -f 2 | wc -l)
-echo Lista errori $nstore
+echo Lista degli $nstore errori
+echo ""
 grep "Errore" testout.log | cut -d':' -f 2
 
+echo ----
 srvpid=$(pidof ./server)
 kill -10 $srvpid

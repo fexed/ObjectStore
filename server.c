@@ -40,6 +40,7 @@ static void signalHandler(int signum) {
 		printf("threadAttivi\t\t%d\nclientConnessi\t\t%d\noggettiMemorizzati\t%d\nstoreTotalSize\t\t%d Byte\n", threads, clientConnessi, oggettiMemorizzati, storeTotalSize);
 	} else if (signum == SIGPIPE) { //ignore
 	} else {
+		cleanupserver();
 		exit(signum);
 	}
 }
@@ -52,7 +53,7 @@ int startupserver() {
 	if (retval != 0) return retval;
 	retval = sigaction(SIGPIPE, &s, NULL);
 	if (retval != 0) return retval;
-	retval = sigaction(SIGSEGV, &s, NULL);
+	retval = sigaction(SIGINT, &s, NULL);
 	if (retval != 0) return retval;
 	
 	strncpy(skta.sun_path, SOCKETNAME, UNIX_PATH_MAX);
@@ -179,6 +180,8 @@ static void* clientHandler(void *arg) {
 			buff = calloc(BUFFSIZE, sizeof(char));
 			buff = memset(buff, 0, BUFFSIZE);
 			recv(clientskt, buff, BUFFSIZE, MSG_WAITALL);
+			
+			printf("%s:\t%s", name, buff);
 			//printf("Ricevo\t%s\n", buff);
 
 			header = strtok(buff, "\n");
@@ -220,7 +223,7 @@ static void* clientHandler(void *arg) {
 			} else if (strstr(header, "RETRIEVE") != NULL) {
 				strtok(buff, " ");
 				dataname = strtok(NULL, " ");
-				
+
 				filename = calloc(strlen(dirname)+strlen(dataname)+1, sizeof(char));
 				filename = strcpy(filename, dirname);
 				filename = strcat(filename, "/");
