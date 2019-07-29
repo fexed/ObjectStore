@@ -18,3 +18,38 @@ test :
 	@./scripttest.sh
 	@echo ""
 	@./testsum.sh
+
+bigtest :
+	@make clean
+	@make all
+	make test
+	@make clean
+	@make all
+	make test
+	@make clean
+	@make all
+	make test
+	@make clean
+	@make all
+	make test
+	@make clean
+	@make all
+	make test
+	@make clean
+	@make all
+	make test
+	@make clean
+	@make all
+	make test
+	@make clean
+	@make all
+	make test
+	@make clean
+	@make all
+	make test
+	@make clean
+	@make all
+	make test
+	@make clean
+	@make all
+	make test
