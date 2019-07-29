@@ -59,7 +59,7 @@ int os_store(char *name, void *block, size_t len) {
 	write(skt, buff, BUFFSIZE);
 	
 	free(buff);
-	*buff = calloc(BUFFSIZE, sizeof(char));
+	buff = calloc(BUFFSIZE, sizeof(char));
 	buff = memset(buff, 0, BUFFSIZE);
 
 	write(skt, block, len);

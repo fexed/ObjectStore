@@ -19,11 +19,13 @@
 				perror(str); \
 		}
 
-volatile sig_atomic_t clientConnessi, oggettiMemorizzati, storeTotalSize, threads;
+volatile sig_atomic_t signaled;
 int skt, sktAccepted;
 struct sockaddr_un skta;
 struct sigaction s;
 pthread_t threadpool[MAXTHREADS];
+
+int clientConnessi, oggettiMemorizzati, storeTotalSize, threads;
 static pthread_mutex_t clientConnessiMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t threadAttiviMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t oggettiMemorizzatiMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -88,7 +90,7 @@ void mask_sign() {
 static void* clientHandler(void *arg) {
 	int clientskt = (int) arg;
 	int value;
-	char *buff, *name, *header, *dirname;
+	char *buff, *savetoken, *name, *header, *dirname;
 	char *dataname, *filename;
 	void *datavalue;
 	size_t datalen;
@@ -101,11 +103,11 @@ static void* clientHandler(void *arg) {
 	buff = calloc(BUFFSIZE, sizeof(char));
 	buff = memset(buff, 0, BUFFSIZE);
 	recv(clientskt, buff, BUFFSIZE, MSG_WAITALL);
-	header = strtok(buff, "\n");
+	header = strtok_r(buff, "\n", &savetoken);
 
 	if (header != NULL && strstr(header, "REGISTER") != NULL) {
-		strtok(buff, " ");
-		name = strcpy(name, strtok(NULL, " "));
+		strtok_r(buff, " ", &savetoken);
+		name = strcpy(name, strtok_r(NULL, " ", &savetoken));
 		dirname = malloc(sizeof(name)+sizeof("data/"));
 		dirname = strcpy(dirname, "data/");
 		dirname = strcat(dirname, name);
@@ -136,47 +138,62 @@ static void* clientHandler(void *arg) {
 			buff = memset(buff, 0, BUFFSIZE);
 			recv(clientskt, buff, BUFFSIZE, MSG_WAITALL);
 
-			header = strtok(buff, "\n");
-			if (strstr(header, "STORE") != NULL) {
-				strtok(buff, " ");
-				dataname = strtok(NULL, " ");
-				datalen = atoi(strtok(NULL, " "));
-				datavalue = malloc(datalen);
-				datavalue = memset(datavalue, 0, datalen);
-				recv(clientskt, datavalue, datalen, MSG_WAITALL);
+			//buffcpy = calloc(BUFFSIZE, sizeof(char));
+			//buffcpy = memset(buffcpy, 0, BUFFSIZE);
+			//buffcpy = strcpy(buffcpy, buff);
 
-				filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
-				filename = memset(filename, 0, sizeof(char)*(strlen(dirname)+strlen(dataname)+2));
-				filename = strcpy(filename, dirname);
-				filename = strcat(filename, "/");
-				filename = strcat(filename, dataname);
-				file = fopen(filename, "w");
-
-				if (file == NULL) {
-					free(filename);
-					free(buff);
-					free(datavalue);
+			header = strtok_r(buff, " ", &savetoken);
+			if (strcmp(header, "STORE") == 0) {
+				//strtok_r(buff, " ");
+				dataname = strtok_r(NULL, " ", &savetoken);
+				header = strtok_r(NULL, " ", &savetoken);
+				datalen = strtol(header, (char **) NULL, 10); //Bug fix
+				if (errno == EINVAL || errno == ERANGE) {
 					buff = calloc(BUFFSIZE, sizeof(char));
 					memset(buff, 0, BUFFSIZE);
 					buff = strcpy(buff, "KO Errore: ");
 					buff = strcat(buff, strerror(errno));
 					buff = strcat(buff, " \n");
 					write(clientskt, buff, BUFFSIZE);
-				} else {
-					fwrite(&datalen, sizeof(size_t), 1, file);
-					fwrite(datavalue, sizeof(char), datalen, file);
-					fclose(file);
-					free(filename);
-					free(datavalue);
-					write(clientskt, "OK \n", BUFFSIZE);
-					incrementaStoreTotalSize((int) datalen);
-					incrementaOggettiMemorizzati();
+					} else {
+					datavalue = malloc(datalen);
+					datavalue = memset(datavalue, 0, datalen);
+					recv(clientskt, datavalue, datalen, MSG_WAITALL);
+
+					filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
+					filename = memset(filename, 0, sizeof(char)*(strlen(dirname)+strlen(dataname)+2));
+					filename = strcpy(filename, dirname);
+					filename = strcat(filename, "/");
+					filename = strcat(filename, dataname);
+					file = fopen(filename, "w");
+
+					if (file == NULL) {
+						free(filename);
+						free(buff);
+						free(datavalue);
+						buff = calloc(BUFFSIZE, sizeof(char));
+						memset(buff, 0, BUFFSIZE);
+						buff = strcpy(buff, "KO Errore: ");
+						buff = strcat(buff, strerror(errno));
+						buff = strcat(buff, " \n");
+						write(clientskt, buff, BUFFSIZE);
+					} else {
+						fwrite(&datalen, sizeof(size_t), 1, file);
+						fwrite(datavalue, sizeof(char), datalen, file);
+						fclose(file);
+						free(filename);
+						free(datavalue);
+						write(clientskt, "OK \n", BUFFSIZE);
+						incrementaStoreTotalSize((int) datalen);
+						incrementaOggettiMemorizzati();
+					}
 				}
-			} else if (strstr(header, "RETRIEVE") != NULL) {
-				strtok(buff, " ");
-				dataname = strtok(NULL, " ");
+			} else if (strcmp(header, "RETRIEVE") == 0) {
+				//strtok_r(buff, " ");
+				dataname = strtok_r(NULL, " ", &savetoken);
 
 				filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
+				filename = memset(filename, 0, sizeof(char)*(strlen(dirname)+strlen(dataname)+2));
 				filename = strcpy(filename, dirname);
 				filename = strcat(filename, "/");
 				filename = strcat(filename, dataname);
@@ -212,11 +229,12 @@ static void* clientHandler(void *arg) {
 					write(clientskt, datavalue, datalen);
 					free(datavalue);
 				}
-			} else if (strstr(header, "DELETE") != NULL) {
-				strtok(buff, " ");
-				dataname = strtok(NULL, " ");
+			} else if (strcmp(header, "DELETE") == 0) {
+				//strtok_r(buff, " ");
+				dataname = strtok_r(NULL, " ", &savetoken);
 
 				filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
+				filename = memset(filename, 0, sizeof(char)*(strlen(dirname)+strlen(dataname)+2));
 				filename = strcpy(filename, dirname);
 				filename = strcat(filename, "/");
 				filename = strcat(filename, dataname);
@@ -255,7 +273,7 @@ static void* clientHandler(void *arg) {
 				pthread_exit(NULL);
 			} else {
 				//printf("%s\t%s\n", name, buff);
-				write(clientskt, "KO Comando non riconosciuto \n", BUFFSIZE);
+				write(clientskt, "KO Errore: Comando non riconosciuto \n", BUFFSIZE);
 			}
 		} while(1); //TODO fix
 		free(buff);
@@ -271,7 +289,6 @@ static void* clientHandler(void *arg) {
 	}
 }
 
-
 void cleanupserver() {
 	close(skt);
 	close(sktAccepted);
@@ -280,7 +297,7 @@ void cleanupserver() {
 
 static void signalHandler(int signum) {
 	if (signum == SIGUSR1) {
-		printf("threadAttivi\t\t%d\nclientConnessi\t\t%d\noggettiMemorizzati\t%d\nstoreTotalSize\t\t%d Byte\n", threads, clientConnessi, oggettiMemorizzati, storeTotalSize);
+		signaled = 1;
 	} else if (signum == SIGPIPE) { //ignore
 	} else {
 		cleanupserver();
@@ -313,6 +330,7 @@ int startupserver() {
 	threads = 0;
 	oggettiMemorizzati = 0;
 	storeTotalSize = 0;
+	signaled = 0;
 
 	return retval;
 }
@@ -329,6 +347,11 @@ int main () {
 		if (threads < MAXTHREADS) {
 			retval = pthread_create(&threadpool[threads], NULL, *clientHandler, (void *)sktAccepted);
 			//TODO fix                          ^^^^^^^
+		}
+
+		if (signaled == 1) {
+			signaled = 0;
+			printf("threadAttivi\t\t%d\nclientConnessi\t\t%d\noggettiMemorizzati\t%d\nstoreTotalSize\t\t%d Byte\n", threads, clientConnessi, oggettiMemorizzati, storeTotalSize);
 		}
 	} while(1); //TODO fix
 
