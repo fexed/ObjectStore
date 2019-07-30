@@ -63,8 +63,8 @@ echo ----
 nsuccessi=$(echo "(" $nstoreokperc "+" $nretrieveokperc "+" $nremoveokperc ")" / 3 | bc)
 nfallimenti=$(echo "(" $nstorekoperc "+" $nretrievekoperc "+" $nremovekoperc ")" / 3 | bc)
 echo "	Risultato del test"
-echo "		Successi in media:	" $nsuccessi "%"
-echo "		Fallimenti in media:	" $nfallimenti "%"
+echo "		Successi:	" $nsuccessi "%"
+echo "		Fallimenti:	" $nfallimenti "%"
 
 echo ----
 srvpid=$(pidof ./server)
