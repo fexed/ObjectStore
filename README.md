@@ -3,8 +3,8 @@
 ## Introduzione
 Lo studente dovrà realizzre un *object store* implementato come **sistema client-server**, e destinato a **supportare le richieste di memorizzare e recuperare blocchi di dati** da parte di un gran numero di applicazioni. La connessione fra clienti e object store avviene attraverso **socket su dominio locale**.
 In particolare, sarà necessario implementare:
-- [ ] la **parte server** (object store) come eseguibile autonomo
-- [ ] una **libreria** destinata ad essere **incorporata nei client** che si **interfacci con l'object store utilizzando il protocollo definito sotto**
+- [X] la **parte server** (object store) come eseguibile autonomo
+- [X] una **libreria** destinata ad essere **incorporata nei client** che si **interfacci con l'object store utilizzando il protocollo definito sotto**
 - [X] un **client di esempio** che usi la libreria per testare il funzionamento del sistema
 
 ## L'object store
@@ -40,13 +40,13 @@ In dettaglio, il protocollo prevede i seguenti messagi:
 - [X] **Registrazione**: inviato dal cliente per registrarsi sull'object store; quest'ultimo risponde con l'esito dell'operazione
   - Request: `REGISTER <name> \n`
   - Response: `OK\n` (registrazione riuscita) oppure `KO <message> \n` (registrazione fallita)
-- [ ] **Memorizzazione**: inviato dal cliente per memorizzare un oggetto nel proprio spazio privato sull'object store; quest'ultimo risponde con l'esito dell'operazione
+- [X] **Memorizzazione**: inviato dal cliente per memorizzare un oggetto nel proprio spazio privato sull'object store; quest'ultimo risponde con l'esito dell'operazione
   - Request: `STORE <name> <len> \n <data>` (in cui *data* è un blocco binario di lunghezza *len* bytes) 
   - Response: `OK\n` (memorizzazione riuscita) oppure `KO <message> \n` (memorizzazione fallita)
-- [ ] **Lettura**: inviato dal cliente per recuperare i dati di un oggetto precedentemente memorizzato nel proprio spazio privato sull'object store; quest'ultimo risponde con i dati richiesti, oppure con una segnalazione di errore
+- [X] **Lettura**: inviato dal cliente per recuperare i dati di un oggetto precedentemente memorizzato nel proprio spazio privato sull'object store; quest'ultimo risponde con i dati richiesti, oppure con una segnalazione di errore
   - Request: `RETRIEVE <name> \n` 
   - Response: `DATA <len> \n <data>` (se l'operazione ha avuto successo, in cui *data* è un blocco binario di lunghezza *len* bytes) oppure `KO <message> \n` (in caso di fallimento)
-- [ ] **Cancellazione**: inviato dal client per cancellare un oggetto memorizzato sull'object store; quest'ultimo risponde con una indicazione di successo
+- [X] **Cancellazione**: inviato dal client per cancellare un oggetto memorizzato sull'object store; quest'ultimo risponde con una indicazione di successo
   - Request: `DELETE <name> \n` 
   - Response: `OK \n` (cancellazione riuscita) oppure `KO <message> \n` (cancellazione fallita)
 - [X] **Disconnessione**: inviato dal client per chiudere in maniera ordinata la connessione verso l'object store; ha sempre successo
