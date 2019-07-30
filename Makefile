@@ -20,36 +20,4 @@ test :
 	@./testsum.sh
 
 bigtest :
-	@make clean
-	@make all
-	make test
-	@make clean
-	@make all
-	make test
-	@make clean
-	@make all
-	make test
-	@make clean
-	@make all
-	make test
-	@make clean
-	@make all
-	make test
-	@make clean
-	@make all
-	make test
-	@make clean
-	@make all
-	make test
-	@make clean
-	@make all
-	make test
-	@make clean
-	@make all
-	make test
-	@make clean
-	@make all
-	make test
-	@make clean
-	@make all
-	make test
+	./bigtest.sh
