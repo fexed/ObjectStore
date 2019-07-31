@@ -56,7 +56,7 @@ echo "Fallimenti:	" $nremovekoperc "%"
 
 echo ----
 nerrorioutput=$(grep "Errore" testout.log | cut -d':' -f 2 | wc -l)
-echo "Errori dall'output:" $nerrorioutput
+echo "Errori rilevati dall'output:" $nerrorioutput
 grep "Errore" testout.log
 echo ----
 
