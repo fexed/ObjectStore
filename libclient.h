@@ -5,7 +5,7 @@
 #define BUFFSIZE 100
 #define UNIX_PATH_MAX 108
 
-int os_connect(char *name); //Connette con username name. true se OK, false altrimenti
+int os_connect(char *name);
 
 int os_store(char *name, void *block, size_t len);
 

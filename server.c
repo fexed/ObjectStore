@@ -276,7 +276,7 @@ void cleanupserver() {
 static void signalHandler(int signum) {
 	if (signum == SIGUSR1) {
 		signaled = 1;
-	} else if (signum == SIGPIPE) { //ignore
+	} else if (signum == SIGPIPE) {
 	} else {
 		cleanupserver();
 		exit(signum);

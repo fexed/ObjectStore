@@ -14,7 +14,7 @@ all :
 	$(CC) $(CFLAGS) -pthread server.c $(LDFLAGS) -o server
 
 clean :
-	rm -f client server libclient.a libclient.o objstore.sock testout.log server.log
+	rm -f client server libclient.a libclient.o objstore.sock testout.log
 	rm -rf data/
 	./killserver.sh
 
