@@ -17,6 +17,7 @@
 #define CHECK_RETVAL(value, str) \
 		if (value != 0) { \
 				perror(str); \
+				return value; \
 		}
 
 volatile sig_atomic_t signaled;
@@ -181,7 +182,6 @@ static void* clientHandler(void *arg) {
 					}
 				}
 			} else if (strcmp(header, "RETRIEVE") == 0) {
-				//strtok_r(buff, " ");
 				dataname = strtok_r(NULL, " ", &savetoken);
 
 				filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
@@ -250,6 +250,7 @@ static void* clientHandler(void *arg) {
 				sendError(clientskt, name, "Comando non riconosciuto");
 			}
 		} while(online == 1);
+
 		free(buff);
 		close(clientskt);
 		decrementaClientConnessi();
@@ -257,8 +258,10 @@ static void* clientHandler(void *arg) {
 		pthread_exit(NULL);
 	} else {
 		sendError(clientskt, name, "Comando non riconosciuto");
+
 		free(buff);
 		close(clientskt);
+
 		decrementaThreadAttivi();
 		pthread_exit(NULL);
 	}
@@ -291,6 +294,8 @@ int startupserver() {
 	if (retval != 0) return retval;
 	retval = sigaction(SIGINT, &s, NULL);
 	if (retval != 0) return retval;
+	retval = sigaction(SIGTERM, &s, NULL);
+	if (retval != 0) return retval;
 	
 	strncpy(skta.sun_path, SOCKETNAME, UNIX_PATH_MAX);
 	skta.sun_family = AF_UNIX;
@@ -322,6 +327,7 @@ int main () {
 		if (threads < MAXTHREADS) {
 			retval = pthread_create(&threadpool[threads], NULL, *clientHandler, (void *)sktAccepted);
 			//TODO fix                          ^^^^^^^
+			if (retval != 0) sendError(sktAccepted, "<non connesso>", "Impossibile istanziare il thread");
 		}
 
 		if (signaled == 1) {
