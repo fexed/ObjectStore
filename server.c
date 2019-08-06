@@ -82,14 +82,18 @@ void decrementaThreadAttivi() {
 
 void sendError(int clientskt, char *name, char *error) {
 	char *buffer = calloc(BUFFSIZE, sizeof(char));
-	memset(buffer, 0, BUFFSIZE);
-	buffer = strcpy(buffer, "KO Errore ");
-	buffer = strcat(buffer, name);
-	buffer = strcat(buffer, ": ");
-	buffer = strcat(buffer, error);
-	buffer = strcat(buffer, " \n");
-	write(clientskt, buffer, BUFFSIZE);
-	free(buffer);
+	if (buffer == NULL) {
+		write(clientskt, "KO Errore sconosciuto e errore nella calloc \n", BUFFSIZE);
+		} else {
+		memset(buffer, 0, BUFFSIZE);
+		buffer = strcpy(buffer, "KO Errore ");
+		buffer = strcat(buffer, name);
+		buffer = strcat(buffer, ": ");
+		buffer = strcat(buffer, error);
+		buffer = strcat(buffer, " \n");
+		write(clientskt, buffer, BUFFSIZE);
+		free(buffer);
+	}
 }
 
 void mask_sign() {
@@ -116,6 +120,14 @@ static void* clientHandler(void *arg) {
 	buff = memset(buff, 0, BUFFSIZE);
 	recv(clientskt, buff, BUFFSIZE, MSG_WAITALL);
 	header = strtok_r(buff, "\n", &savetoken);
+
+	if (name == NULL || buff == NULL) {
+		sendError(clientskt, name, "Inizializzazione del thread fallita");
+
+		close(clientskt);
+		decrementaThreadAttivi();
+		pthread_exit(NULL);
+	}
 
 	if (header != NULL && strstr(header, "REGISTER") != NULL) {
 		strtok_r(buff, " ", &savetoken);
