@@ -24,6 +24,10 @@ int os_connect(char *name){
 	}
 
 	buff = calloc(BUFFSIZE, sizeof(char));
+	if (buff == NULL) {
+		printf("Errore: generazione del messaggio di registrazione fallita\n");
+		return -1;
+	}
 	buff = memset(buff, 0, BUFFSIZE);
 	buff = strcpy(buff, "REGISTER ");
 	buff = strcat(buff, name);
@@ -47,6 +51,10 @@ int os_store(char *name, void *block, size_t len) {
 	char *buff = calloc(BUFFSIZE, sizeof(char));
 	int value;
 
+	if (buff == NULL) {
+		printf("Errore: generazione del messaggio di memorizzazione di %s fallita\n", name);
+		return -1;
+	}
 	buff = memset(buff, 0, BUFFSIZE);
 	buff = strcpy(buff, "STORE ");
 	buff = strcat(buff, name);
@@ -82,6 +90,10 @@ void *os_retrieve(char *name) {
 	void *datavalue;
 	size_t len;
 
+	if (buff == NULL) {
+		printf("Errore: generazione del messaggio di ottenimento di %s fallita\n", name);
+		return -1;
+	}
 	buff = strcpy(buff, "RETRIEVE ");
 	buff = strcat(buff, name);
 	buff = strcat(buff, " \n");
@@ -107,6 +119,10 @@ int os_delete(char *name) {
 	char *buff = calloc(BUFFSIZE, sizeof(char));
 	int value;
 
+	if (buff == NULL) {
+		printf("Errore: generazione del messaggio di rimozione di %s fallita\n", name);
+		return -1;
+	}
 	buff = strcpy(buff, "DELETE ");
 	buff = strcat(buff, name);
 	buff = strcat(buff, " \n");
@@ -126,7 +142,7 @@ int os_delete(char *name) {
 }
 
 int os_disconnect() {
-	write(skt, "LEAVE \n", 8);
+	write(skt, "LEAVE \n", BUFFSIZE);
 	close(skt);
 	return 0;
 }
