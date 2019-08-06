@@ -7,7 +7,7 @@ echo "Inizio test"
 
 echo "" > testout.log
 
-echo "STORE"
+echo "50 STORE"
 
 for i in {1..50}
 do
@@ -15,25 +15,29 @@ do
 	pids[$i]=$!
 done
 
+echo "... attendo"
+
 for pid in ${pids[*]}; do
 	wait $pid
 done
 
-echo "RETRIEVE"
+echo "30 RETRIEVE"
 
-for i in {1..29}
+for i in {1..30}
 do
 	./client usr_$i 2 >> $i.log &
 	pids[$i]=$!
 done
 
-echo "DELETE"
+echo "20 DELETE"
 
-for i in {30..50}
+for i in {31..50}
 do
 	./client usr_$i 3 >> $i.log &
 	pids[$i]=$!
 done
+
+echo "... attendo"
 
 for pid in ${pids[*]}; do
 	wait $pid
