@@ -92,7 +92,7 @@ void *os_retrieve(char *name) {
 
 	if (buff == NULL) {
 		printf("Errore: generazione del messaggio di ottenimento di %s fallita\n", name);
-		return -1;
+		return NULL;
 	}
 	buff = strcpy(buff, "RETRIEVE ");
 	buff = strcat(buff, name);
