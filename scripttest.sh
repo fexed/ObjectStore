@@ -2,8 +2,7 @@
 ./server &
 
 echo ""
-echo "**********"
-echo "Inizio test"
+echo "**Inizio test**"
 
 echo "" > testout.log
 
@@ -48,5 +47,5 @@ do
 	cat $i.log >> testout.log
 	rm $i.log
 done
-echo "**********"
+echo "***************"
 echo ""
