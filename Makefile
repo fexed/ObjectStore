@@ -2,16 +2,18 @@ CC = gcc
 CFLAGS = -Wall -Wextra -pedantic -g
 LDFLAGS = -L.
 
-libs : libclient.c
-	@echo ""
-	@echo "***** Compilo librerie"
-	$(CC) $(CFLAGS) libclient.c -c -o libclient.o
-	ar rvs libclient.a libclient.o
+all : server client
 
 server : server.c
 	@echo ""
 	@echo "***** Compilo server"
 	$(CC) $(CFLAGS) -pthread server.c $(LDFLAGS) -o server
+
+libs : libclient.c
+	@echo ""
+	@echo "***** Compilo librerie"
+	$(CC) $(CFLAGS) libclient.c -c -o libclient.o
+	ar rvs libclient.a libclient.o
 
 client : libs client.c
 	@echo ""
@@ -22,8 +24,6 @@ clean :
 	rm -f client server libclient.a libclient.o objstore.sock testout.log
 	rm -rf data/
 	./killserver.sh
-
-all : server client
 
 test :
 	@./scripttest.sh
