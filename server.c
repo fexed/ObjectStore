@@ -11,7 +11,7 @@
 #include <sys/un.h>
 
 #define SOCKETNAME "./objstore.sock"
-#define MAXTHREADS 50
+#define MAXTHREADS 100
 #define BUFFSIZE 100
 #define UNIX_PATH_MAX 108
 #define CHECK_RETVAL(value, str) \
@@ -240,16 +240,18 @@ static void* clientHandler(void *arg) {
 				if (file != NULL) {
 					fread(&datalen, sizeof(size_t), 1, file);
 					fclose(file);
-				}
+					value = remove(filename);
+					free(filename);
 
-				value = remove(filename);
-				free(filename);
-
-				if (value == 0) {
-					write(clientskt, "OK \n", BUFFSIZE);
-					decrementaStoreTotalSize((int) datalen);
-					decrementaOggettiMemorizzati();
+					if (value == 0) {
+						write(clientskt, "OK \n", BUFFSIZE);
+						decrementaStoreTotalSize((int) datalen);
+						decrementaOggettiMemorizzati();
+					} else {
+						sendError(clientskt, name, strerror(errno));
+					}
 				} else {
+					free(filename);
 					sendError(clientskt, name, strerror(errno));
 				}
 			} else if (strstr(header, "LEAVE") != NULL) {
@@ -341,14 +343,14 @@ int main () {
 			//TODO fix                          ^^^^^^^
 			if (retval != 0) sendError(sktAccepted, "<non connesso>", "Impossibile istanziare il thread");
 		} else {
-			sendError(sktAccepted, "<non connesso>", "Impossibile istanziare il thread");
+			sendError(sktAccepted, "<non connesso>", "Troppi thread connessi");
 		}
 
 		if (signaled == 1) {
 			signaled = 0;
 			printf("Thread attivi:\t\t\t\t%d\nClient connessi:\t\t\t%d\nOggetti attualmente in store:\t\t%d\nDimensione totale store:\t\t%d Byte\n", threads, clientConnessi, oggettiMemorizzati, storeTotalSize);
 		}
-	} while(1); //TODO fix
+	} while(1);
 
 	return 0;
 }
