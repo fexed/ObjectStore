@@ -21,7 +21,7 @@ client : libs client.c
 	$(CC) $(CFLAGS) client.c $(LDFLAGS) -lclient -o client
 
 clean :
-	rm -f client server libclient.a libclient.o objstore.sock testout.log
+	rm -f client server libclient.a libclient.o objstore.sock testout.log *.log
 	rm -rf data/
 	./killserver.sh
 

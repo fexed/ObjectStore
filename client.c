@@ -130,7 +130,6 @@ int main(int argc, char *argv[]) {
 
 
 			if (n == 0) {
-				printf("%s connesso\n", argv[1]);
 				n = atoi(argv[2]);
 				if (n == 1) testSTORE();
 				else if (n == 2) testRETRIEVE();
