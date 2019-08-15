@@ -130,6 +130,7 @@ int main(int argc, char *argv[]) {
 
 
 			if (n == 0) {
+				printf("%s connesso\n", argv[1]);
 				n = atoi(argv[2]);
 				if (n == 1) testSTORE();
 				else if (n == 2) testRETRIEVE();
@@ -140,7 +141,7 @@ int main(int argc, char *argv[]) {
 				sleep(1);
 			} 
 		}
-		printf("Erorre %s: impossibile connettersi dopo 5 tentatitivi", argv[1]);
+		printf("Erorre %s: impossibile connettersi dopo 5 tentatitivi\n", argv[1]);
 		return -2;
 	}
 }
