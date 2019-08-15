@@ -140,6 +140,7 @@ int main(int argc, char *argv[]) {
 				sleep(1);
 			} 
 		}
+		printf("Erorre %s: impossibile connettersi dopo 5 tentatitivi", argv[1]);
 		return -2;
 	}
 }
