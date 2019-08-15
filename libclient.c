@@ -40,7 +40,7 @@ int os_connect(char *name){
 
 	if (value != 0) {
 		strtok(buff, " ");
-		printf("%s\n", strtok(NULL, "\n"));
+		//printf("%s\n", strtok(NULL, "\n"));
 	}
 
 	free(buff);
