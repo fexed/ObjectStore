@@ -11,7 +11,7 @@
 #include <sys/un.h>
 
 #define SOCKETNAME "./objstore.sock"
-#define MAXTHREADS 50
+#define MAXTHREADS 10
 #define BUFFSIZE 100
 #define UNIX_PATH_MAX 108
 #define CHECK_RETVAL(value, str) \
@@ -340,6 +340,8 @@ int main () {
 			retval = pthread_create(&threadpool[threads], NULL, *clientHandler, (void *)sktAccepted);
 			//TODO fix                          ^^^^^^^
 			if (retval != 0) sendError(sktAccepted, "<non connesso>", "Impossibile istanziare il thread");
+		} else {
+			sendError(sktAccepted, "<non connesso>", "Impossibile istanziare il thread");
 		}
 
 		if (signaled == 1) {
