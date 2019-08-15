@@ -6,7 +6,7 @@ echo "**Inizio test**"
 
 echo "" > testout.log
 
-echo "50 STORE"
+echo "1000 STORE"
 
 for i in {1..50}
 do
@@ -20,7 +20,7 @@ for pid in ${pids[*]}; do
 	wait $pid
 done
 
-echo "30 RETRIEVE"
+echo "600 RETRIEVE"
 
 for i in {1..30}
 do
@@ -28,7 +28,7 @@ do
 	pids[$i]=$!
 done
 
-echo "20 DELETE"
+echo "400 DELETE"
 
 for i in {31..50}
 do
