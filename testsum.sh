@@ -14,8 +14,8 @@ echo STORE OK	$nstoreok
 nstoreko=$(grep "STORE KO" testout.log | cut -d':' -f 2 | paste -sd+ | bc)
 echo STORE KO	$nstoreko
 echo ""
-nstoreokperc=$(echo "(" $nstoreok "/" $nstoredo ") * 100" | bc)
-nstorekoperc=$(echo "(" $nstoreko "/" $nstoredo ") * 100" | bc)
+nstoreokperc=$(echo "scale=2; ( " $nstoreok "/" $nstoredo " ) * 100" | bc -l)
+nstorekoperc=$(echo "scale=2; ( " $nstoreko "/" $nstoredo " ) * 100" | bc -l)
 
 echo "Successi:	" $nstoreokperc "%"
 echo "Fallimenti:	" $nstorekoperc "%"
@@ -31,8 +31,8 @@ echo RETRIEVE OK	$nretrieveok
 nretrieveko=$(grep "RETRIEVE KO" testout.log | cut -d':' -f 2 | paste -sd+ | bc)
 echo RETRIEVE KO	$nretrieveko
 echo ""
-nretrieveokperc=$(echo "(" $nretrieveok "/" $nretrievedo ") * 100" | bc)
-nretrievekoperc=$(echo "(" $nretrieveko "/" $nretrievedo ") * 100" | bc)
+nretrieveokperc=$(echo "scale=2; ( " $nretrieveok "/" $nretrievedo " ) * 100" | bc -l)
+nretrievekoperc=$(echo "scale=2; ( " $nretrieveko "/" $nretrievedo " ) * 100" | bc -l)
 
 echo "Successi:	" $nretrieveokperc "%"
 echo "Fallimenti:	" $nretrievekoperc "%"
@@ -48,8 +48,8 @@ echo REMOVE OK	$nremoveok
 nremoveko=$(grep "REMOVE KO" testout.log | cut -d':' -f 2 | paste -sd+ | bc)
 echo REMOVE KO	$nremoveko
 echo ""
-nremoveokperc=$(echo "(" $nremoveok "/" $nremovedo ") * 100" | bc)
-nremovekoperc=$(echo "(" $nremoveko "/" $nremovedo ") * 100" | bc)
+nremoveokperc=$(echo "scale=2; ( " $nremoveok "/" $nremovedo " ) * 100" | bc -l)
+nremovekoperc=$(echo "scale=2; ( " $nremoveko "/" $nremovedo " ) * 100" | bc -l)
 
 echo "Successi:	" $nremoveokperc "%"
 echo "Fallimenti:	" $nremovekoperc "%"
@@ -60,8 +60,8 @@ echo "Errori rilevati dall'output:" $nerrorioutput
 grep "Errore" testout.log
 echo ----
 
-nsuccessi=$(echo "(" $nstoreokperc "+" $nretrieveokperc "+" $nremoveokperc ")" / 3 | bc)
-nfallimenti=$(echo "(" $nstorekoperc "+" $nretrievekoperc "+" $nremovekoperc ")" / 3 | bc)
+nsuccessi=$(echo "scale=2; (" $nstoreokperc "+" $nretrieveokperc "+" $nremoveokperc ")" / 3 | bc -l)
+nfallimenti=$(echo "scale=2; (" $nstorekoperc "+" $nretrievekoperc "+" $nremovekoperc ")" / 3 | bc -l)
 echo "	Risultato del test"
 echo "		Successi:	" $nsuccessi "%"
 echo "		Fallimenti:	" $nfallimenti "%"
