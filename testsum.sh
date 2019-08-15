@@ -57,7 +57,7 @@ echo "Fallimenti:	" $nremovekoperc "%"
 echo ----
 nerrorioutput=$(grep "Errore" testout.log | cut -d':' -f 2 | wc -l)
 echo "Errori rilevati dall'output:" $nerrorioutput
-grep "Errore" testout.log
+grep -m 10 "Errore" testout.log
 echo ----
 
 nsuccessi=$(echo "scale=2; (" $nstoreokperc "+" $nretrieveokperc "+" $nremoveokperc ")" / 3 | bc -l)
