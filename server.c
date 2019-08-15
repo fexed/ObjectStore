@@ -11,7 +11,7 @@
 #include <sys/un.h>
 
 #define SOCKETNAME "./objstore.sock"
-#define MAXTHREADS 10
+#define MAXTHREADS 50
 #define BUFFSIZE 100
 #define UNIX_PATH_MAX 108
 #define CHECK_RETVAL(value, str) \
