@@ -378,11 +378,12 @@ int startupserver() {
 }
 
 int main () {
-	int retval;
+	int retval, online;
 
 	retval = startupserver();
 	CHECK_RETVAL(retval, "Server setup");
 
+	online = 1;
 	do {
 		listen(skt, SOMAXCONN);
 		sktAccepted = accept(skt, NULL, 0);
@@ -397,8 +398,9 @@ int main () {
 		if (signaled == 1) {
 			signaled = 0;
 			printf("Thread attivi:\t\t\t\t%d\nClient connessi:\t\t\t%d\nOggetti attualmente in store:\t\t%d\nDimensione totale store:\t\t%d Byte\n", threads, clientConnessi, oggettiMemorizzati, storeTotalSize);
+			online = 0;
 		}
-	} while(1);
+	} while(online);
 
 	return 0;
 }
