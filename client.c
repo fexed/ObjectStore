@@ -120,27 +120,21 @@ int main(int argc, char *argv[]) {
 		printf("usage: %s name n\n", argv[0]);
 		return -1;
 	} else {
-		int tentativi, n;
+		int n;
 		testtotali = 0;
 		successi = 0;
 		fallimenti = 0;
 
-		for (tentativi = 0; tentativi < 5; tentativi++) {
-			n = os_connect(argv[1]);
+		n = os_connect(argv[1]);
 
 
-			if (n == 0) {
-				n = atoi(argv[2]);
-				if (n == 1) testSTORE();
-				else if (n == 2) testRETRIEVE();
-				else if (n == 3) testDELETE();
-				else printf("n deve essere tra 1 e 3 compresi\n");
-				return 0;
-			} else {
-				sleep(1);
-			} 
+		if (n == 0) {
+			n = atoi(argv[2]);
+			if (n == 1) testSTORE();
+			else if (n == 2) testRETRIEVE();
+			else if (n == 3) testDELETE();
+			else printf("n deve essere tra 1 e 3 compresi\n");
+			return 0;
 		}
-		printf("Erorre %s: impossibile connettersi dopo 5 tentatitivi\n", argv[1]);
-		return -2;
 	}
 }

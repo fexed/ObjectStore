@@ -25,12 +25,38 @@ int skt, sktAccepted;
 struct sockaddr_un skta;
 struct sigaction s;
 pthread_t threadpool[MAXTHREADS];
+char* clients[MAXTHREADS];
 
 int clientConnessi, oggettiMemorizzati, storeTotalSize, threads;
 static pthread_mutex_t clientConnessiMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t clientsCheck = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t threadAttiviMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t oggettiMemorizzatiMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t storeTotalSizeMutex = PTHREAD_MUTEX_INITIALIZER;
+
+int checkClient(char* name) {
+	int i;
+	int freepos = -1;
+	for (i = 0; i < MAXTHREADS; i++) {
+		if (clients[i] == NULL && freepos == -1) freepos = i;
+		else if (clients[i] != NULL) if (strcmp(name, clients[i]) == 0) return -2;
+	}
+	return freepos; //-1: pieno, -2: cliente già registrato
+}
+
+void registerClient(char* name, int freepos) {
+	pthread_mutex_lock(&clientsCheck);
+	free(clients[freepos]);
+	clients[freepos] = calloc(strlen(name)+1, sizeof(char));
+	strcpy(clients[freepos], name);
+	pthread_mutex_unlock(&clientsCheck);
+}
+
+void deregisterClient(int freepos) {
+	pthread_mutex_lock(&clientsCheck);
+	clients[freepos] = NULL;
+	pthread_mutex_unlock(&clientsCheck);
+}
 
 void incrementaOggettiMemorizzati() {
 	pthread_mutex_lock(&oggettiMemorizzatiMutex);
@@ -105,7 +131,7 @@ void mask_sign() {
 
 static void* clientHandler(void *arg) {
 	int clientskt = (int) arg;
-	int value, online = 0;
+	int value, online = 0, freepos;
 	char *buff, *savetoken, *name, *header, *dirname;
 	char *dataname, *filename;
 	void *datavalue;
@@ -132,144 +158,157 @@ static void* clientHandler(void *arg) {
 	if (header != NULL && strstr(header, "REGISTER") != NULL) {
 		strtok_r(buff, " ", &savetoken);
 		name = strcpy(name, strtok_r(NULL, " ", &savetoken));
-		dirname = malloc(sizeof(name)+sizeof("data/"));
-		dirname = strcpy(dirname, "data/");
-		dirname = strcat(dirname, name);
 
-		value = mkdir(dirname, 0700);
-		if (value != 0 && errno != EEXIST) {
-			sendError(clientskt, name, strerror(errno));
-			free(dirname);
-			decrementaThreadAttivi();
-			pthread_exit(NULL);
-		}
+		pthread_mutex_lock(&clientsCheck);
+		freepos = checkClient(name);
+		pthread_mutex_unlock(&clientsCheck);
+		if (freepos == 0) {
+			registerClient(name, freepos);
+			dirname = malloc(sizeof(name)+sizeof("data/"));
+			dirname = strcpy(dirname, "data/");
+			dirname = strcat(dirname, name);
 
-		write(clientskt, "OK \n", BUFFSIZE);
-		online = 1;
-		incrementaClientConnessi();
+			value = mkdir(dirname, 0700);
+			if (value != 0 && errno != EEXIST) {
+				sendError(clientskt, name, strerror(errno));
+				free(dirname);
+				decrementaThreadAttivi();
+				pthread_exit(NULL);
+			}
 
-		do {
-			free(buff);
-			buff = calloc(BUFFSIZE, sizeof(char));
-			buff = memset(buff, 0, BUFFSIZE);
-			recv(clientskt, buff, BUFFSIZE, MSG_WAITALL);
+			write(clientskt, "OK \n", BUFFSIZE);
+			online = 1;
+			incrementaClientConnessi();
 
-			header = strtok_r(buff, " ", &savetoken);
-			if (strcmp(header, "STORE") == 0) {
-				dataname = strtok_r(NULL, " ", &savetoken);
-				header = strtok_r(NULL, " ", &savetoken);
-				datalen = strtol(header, (char **) NULL, 10);
-				if (errno == EINVAL || errno == ERANGE) {
-					buff = calloc(BUFFSIZE, sizeof(char));
-					memset(buff, 0, BUFFSIZE);
-					buff = strcpy(buff, "KO Errore: ");
-					buff = strcat(buff, strerror(errno));
-					buff = strcat(buff, " \n");
-					write(clientskt, buff, BUFFSIZE);
-					} else {
-					datavalue = malloc(datalen);
-					datavalue = memset(datavalue, 0, datalen);
-					recv(clientskt, datavalue, datalen, MSG_WAITALL);
+			do {
+				free(buff);
+				buff = calloc(BUFFSIZE, sizeof(char));
+				buff = memset(buff, 0, BUFFSIZE);
+				recv(clientskt, buff, BUFFSIZE, MSG_WAITALL);
+
+				header = strtok_r(buff, " ", &savetoken);
+				if (strcmp(header, "STORE") == 0) {
+					dataname = strtok_r(NULL, " ", &savetoken);
+					header = strtok_r(NULL, " ", &savetoken);
+					datalen = strtol(header, (char **) NULL, 10);
+					if (errno == EINVAL || errno == ERANGE) {
+						buff = calloc(BUFFSIZE, sizeof(char));
+						memset(buff, 0, BUFFSIZE);
+						buff = strcpy(buff, "KO Errore: ");
+						buff = strcat(buff, strerror(errno));
+						buff = strcat(buff, " \n");
+						write(clientskt, buff, BUFFSIZE);
+						} else {
+						datavalue = malloc(datalen);
+						datavalue = memset(datavalue, 0, datalen);
+						recv(clientskt, datavalue, datalen, MSG_WAITALL);
+
+						filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
+						filename = memset(filename, 0, sizeof(char)*(strlen(dirname)+strlen(dataname)+2));
+						filename = strcpy(filename, dirname);
+						filename = strcat(filename, "/");
+						filename = strcat(filename, dataname);
+						file = fopen(filename, "w");
+
+						if (file == NULL) {
+							free(filename);
+							free(datavalue);
+							sendError(clientskt, name, strerror(errno));
+						} else {
+							fwrite(&datalen, sizeof(size_t), 1, file);
+							fwrite(datavalue, sizeof(char), datalen, file);
+							fclose(file);
+							free(filename);
+							free(datavalue);
+							write(clientskt, "OK \n", BUFFSIZE);
+							incrementaStoreTotalSize((int) datalen);
+							incrementaOggettiMemorizzati();
+						}
+					}
+				} else if (strcmp(header, "RETRIEVE") == 0) {
+					dataname = strtok_r(NULL, " ", &savetoken);
 
 					filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
 					filename = memset(filename, 0, sizeof(char)*(strlen(dirname)+strlen(dataname)+2));
 					filename = strcpy(filename, dirname);
 					filename = strcat(filename, "/");
 					filename = strcat(filename, dataname);
-					file = fopen(filename, "w");
+					file = fopen(filename, "r");
 
 					if (file == NULL) {
 						free(filename);
-						free(datavalue);
 						sendError(clientskt, name, strerror(errno));
 					} else {
-						fwrite(&datalen, sizeof(size_t), 1, file);
-						fwrite(datavalue, sizeof(char), datalen, file);
+						fread(&datalen, sizeof(size_t), 1, file);
+						datavalue = calloc(1, datalen);
+						memset(datavalue, 0, datalen);
+						fread(datavalue, datalen, 1, file);
 						fclose(file);
 						free(filename);
+
+						free(buff);
+						buff = calloc(BUFFSIZE, sizeof(char));
+						memset(buff, 0, BUFFSIZE);
+						buff = strcpy(buff, "DATA ");
+						char strvalue[10];
+						sprintf(strvalue, "%ld", datalen);
+						buff = strcat(buff, strvalue);
+						buff = strcat(buff, " \n");
+
+						write(clientskt, buff, BUFFSIZE);
+						write(clientskt, datavalue, datalen);
 						free(datavalue);
-						write(clientskt, "OK \n", BUFFSIZE);
-						incrementaStoreTotalSize((int) datalen);
-						incrementaOggettiMemorizzati();
 					}
-				}
-			} else if (strcmp(header, "RETRIEVE") == 0) {
-				dataname = strtok_r(NULL, " ", &savetoken);
+				} else if (strcmp(header, "DELETE") == 0) {
+					dataname = strtok_r(NULL, " ", &savetoken);
 
-				filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
-				filename = memset(filename, 0, sizeof(char)*(strlen(dirname)+strlen(dataname)+2));
-				filename = strcpy(filename, dirname);
-				filename = strcat(filename, "/");
-				filename = strcat(filename, dataname);
-				file = fopen(filename, "r");
+					filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
+					filename = memset(filename, 0, sizeof(char)*(strlen(dirname)+strlen(dataname)+2));
+					filename = strcpy(filename, dirname);
+					filename = strcat(filename, "/");
+					filename = strcat(filename, dataname);
 
-				if (file == NULL) {
-					free(filename);
-					sendError(clientskt, name, strerror(errno));
-				} else {
-					fread(&datalen, sizeof(size_t), 1, file);
-					datavalue = calloc(1, datalen);
-					memset(datavalue, 0, datalen);
-					fread(datavalue, datalen, 1, file);
-					fclose(file);
-					free(filename);
+					file = fopen(filename, "r");
+					if (file != NULL) {
+						fread(&datalen, sizeof(size_t), 1, file);
+						fclose(file);
+						value = remove(filename);
+						free(filename);
 
-					free(buff);
-					buff = calloc(BUFFSIZE, sizeof(char));
-					memset(buff, 0, BUFFSIZE);
-					buff = strcpy(buff, "DATA ");
-					char strvalue[10];
-					sprintf(strvalue, "%ld", datalen);
-					buff = strcat(buff, strvalue);
-					buff = strcat(buff, " \n");
-
-					write(clientskt, buff, BUFFSIZE);
-					write(clientskt, datavalue, datalen);
-					free(datavalue);
-				}
-			} else if (strcmp(header, "DELETE") == 0) {
-				dataname = strtok_r(NULL, " ", &savetoken);
-
-				filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
-				filename = memset(filename, 0, sizeof(char)*(strlen(dirname)+strlen(dataname)+2));
-				filename = strcpy(filename, dirname);
-				filename = strcat(filename, "/");
-				filename = strcat(filename, dataname);
-
-				file = fopen(filename, "r");
-				if (file != NULL) {
-					fread(&datalen, sizeof(size_t), 1, file);
-					fclose(file);
-					value = remove(filename);
-					free(filename);
-
-					if (value == 0) {
-						write(clientskt, "OK \n", BUFFSIZE);
-						decrementaStoreTotalSize((int) datalen);
-						decrementaOggettiMemorizzati();
+						if (value == 0) {
+							write(clientskt, "OK \n", BUFFSIZE);
+							decrementaStoreTotalSize((int) datalen);
+							decrementaOggettiMemorizzati();
+						} else {
+							sendError(clientskt, name, strerror(errno));
+						}
 					} else {
+						free(filename);
 						sendError(clientskt, name, strerror(errno));
 					}
+				} else if (strstr(header, "LEAVE") != NULL) {
+					write(clientskt, "OK \n", BUFFSIZE);
+
+					free(dirname);
+					free(name);
+					online = 0;
 				} else {
-					free(filename);
-					sendError(clientskt, name, strerror(errno));
+					sendError(clientskt, name, "Comando non riconosciuto");
 				}
-			} else if (strstr(header, "LEAVE") != NULL) {
-				write(clientskt, "OK \n", BUFFSIZE);
+			} while(online == 1);
 
-				free(dirname);
-				free(name);
-				online = 0;
-			} else {
-				sendError(clientskt, name, "Comando non riconosciuto");
-			}
-		} while(online == 1);
-
-		free(buff);
-		close(clientskt);
-		decrementaClientConnessi();
-		decrementaThreadAttivi();
-		pthread_exit(NULL);
+			free(buff);
+			close(clientskt);
+			deregisterClient(freepos);
+			decrementaClientConnessi();
+			decrementaThreadAttivi();
+			pthread_exit(NULL);
+		} else {
+			if (freepos == -1) sendError(clientskt, name, "Impossibile istanziare altri thread"); //non dovrebbe mai succedere
+			else if (freepos == -2) sendError(clientskt, name, "Nome già registrato");
+			decrementaThreadAttivi();
+			pthread_exit(NULL);
+		}
 	} else {
 		sendError(clientskt, name, "Comando non riconosciuto");
 
@@ -298,7 +337,7 @@ static void signalHandler(int signum) {
 }
 
 int startupserver() {
-	int retval;
+	int retval, i;
 
 	memset(&s, 0, sizeof(s));
 	s.sa_handler = signalHandler;
@@ -325,6 +364,8 @@ int startupserver() {
 	oggettiMemorizzati = 0;
 	storeTotalSize = 0;
 	signaled = 0;
+
+	for (i = 0; i < MAXTHREADS; i++) clients[i] = NULL;
 
 	return retval;
 }
