@@ -32,3 +32,9 @@ test :
 
 bigtest :
 	./bigtest.sh
+
+dupobjtest :
+	./scripttest_oggettiduplicati.sh
+
+dupclntest :
+	./scripttest_utentiduplicati.sh
