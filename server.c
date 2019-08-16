@@ -47,7 +47,7 @@ int checkClient(char* name) {
 		if (strcmp(clients[i], "__NULL__") == 0 && freepos == -1) {
 			freepos = i;
 			registerClient(name, freepos);
-			i = MAXTHREADS;
+			i = MAXTHREADS; //uscita dal for
 		} else if (clients[i] != NULL) if (strcmp(name, clients[i]) == 0) return -2;
 	}
 	return freepos; //-1: pieno, -2: cliente già registrato
