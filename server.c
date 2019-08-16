@@ -139,6 +139,7 @@ static void* clientHandler(void *arg) {
 	char *dataname, *filename;
 	void *datavalue;
 	size_t datalen;
+	struct stat filestat;
 	FILE* file;
 
 	mask_sign();
@@ -211,21 +212,28 @@ static void* clientHandler(void *arg) {
 						filename = strcpy(filename, dirname);
 						filename = strcat(filename, "/");
 						filename = strcat(filename, dataname);
-						file = fopen(filename, "w");
-
-						if (file == NULL) {
+						value = stat(filename, &filestat);
+						if (value == 0) {
 							free(filename);
 							free(datavalue);
-							sendError(clientskt, name, strerror(errno));
+							sendError(clientskt, name, "File già esistente");
 						} else {
-							fwrite(&datalen, sizeof(size_t), 1, file);
-							fwrite(datavalue, sizeof(char), datalen, file);
-							fclose(file);
-							free(filename);
-							free(datavalue);
-							write(clientskt, "OK \n", BUFFSIZE);
-							incrementaStoreTotalSize((int) datalen);
-							incrementaOggettiMemorizzati();
+
+							file = fopen(filename, "w");
+							if (file == NULL) {
+								free(filename);
+								free(datavalue);
+								sendError(clientskt, name, strerror(errno));
+							} else {
+								fwrite(&datalen, sizeof(size_t), 1, file);
+								fwrite(datavalue, sizeof(char), datalen, file);
+								fclose(file);
+								free(filename);
+								free(datavalue);
+								write(clientskt, "OK \n", BUFFSIZE);
+								incrementaStoreTotalSize((int) datalen);
+								incrementaOggettiMemorizzati();
+							}
 						}
 					}
 				} else if (strcmp(header, "RETRIEVE") == 0) {
