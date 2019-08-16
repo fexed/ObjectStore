@@ -34,27 +34,30 @@ static pthread_mutex_t threadAttiviMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t oggettiMemorizzatiMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t storeTotalSizeMutex = PTHREAD_MUTEX_INITIALIZER;
 
+void registerClient(char* name, int freepos) {
+	free(clients[freepos]);
+	clients[freepos] = calloc(strlen(name)+1, sizeof(char));
+	strcpy(clients[freepos], name);
+}
+
 int checkClient(char* name) {
 	int i;
 	int freepos = -1;
 	for (i = 0; i < MAXTHREADS; i++) {
-		if (clients[i] == NULL && freepos == -1) freepos = i;
-		else if (clients[i] != NULL) if (strcmp(name, clients[i]) == 0) return -2;
+		if (strcmp(clients[i], "__NULL__") == 0 && freepos == -1) {
+			freepos = i;
+			registerClient(name, freepos);
+			i = MAXTHREADS;
+		} else if (clients[i] != NULL) if (strcmp(name, clients[i]) == 0) return -2;
 	}
 	return freepos; //-1: pieno, -2: cliente già registrato
 }
 
-void registerClient(char* name, int freepos) {
-	pthread_mutex_lock(&clientsCheck);
-	free(clients[freepos]);
-	clients[freepos] = calloc(strlen(name)+1, sizeof(char));
-	strcpy(clients[freepos], name);
-	pthread_mutex_unlock(&clientsCheck);
-}
-
 void deregisterClient(int freepos) {
 	pthread_mutex_lock(&clientsCheck);
-	clients[freepos] = NULL;
+	free(clients[freepos]);
+	clients[freepos] = calloc(strlen("__NULL__")+1, sizeof(char));
+	strcpy(clients[freepos], "__NULL__");
 	pthread_mutex_unlock(&clientsCheck);
 }
 
@@ -162,8 +165,8 @@ static void* clientHandler(void *arg) {
 		pthread_mutex_lock(&clientsCheck);
 		freepos = checkClient(name);
 		pthread_mutex_unlock(&clientsCheck);
-		if (freepos == 0) {
-			registerClient(name, freepos);
+		if (freepos >= 0) {
+			//registerClient(name, freepos);
 			dirname = malloc(sizeof(name)+sizeof("data/"));
 			dirname = strcpy(dirname, "data/");
 			dirname = strcat(dirname, name);
@@ -365,7 +368,11 @@ int startupserver() {
 	storeTotalSize = 0;
 	signaled = 0;
 
-	for (i = 0; i < MAXTHREADS; i++) clients[i] = NULL;
+	for (i = 0; i < MAXTHREADS; i++) {
+		free(clients[i]);
+		clients[i] = calloc(strlen("__NULL__")+1, sizeof(char));
+		strcpy(clients[i], "__NULL__");
+	}
 
 	return retval;
 }
