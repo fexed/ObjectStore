@@ -150,7 +150,7 @@ static void* clientHandler(void *arg) {
 
 		close(clientskt);
 		decrementaThreadAttivi();
-		pthread_exit(NULL);
+		return NULL; //fix per un fake leak di pthread
 	}
 
 	recv(clientskt, buff, BUFFSIZE, MSG_WAITALL);
@@ -165,7 +165,7 @@ static void* clientHandler(void *arg) {
 			free(buff);
 			close(clientskt);
 			decrementaThreadAttivi();
-			pthread_exit(NULL);
+			return NULL; //fix per un fake leak di pthread
 		}
 
 		name = strcpy(name, strtok_r(NULL, " ", &savetoken));
@@ -181,11 +181,12 @@ static void* clientHandler(void *arg) {
 			value = mkdir(dirname, 0700);
 			if (value != 0 && errno != EEXIST) {
 				sendError(clientskt, name, strerror(errno));
+				free(name);
 				free(buff);
 				free(header);
 				free(dirname);
 				decrementaThreadAttivi();
-				pthread_exit(NULL);
+				return NULL; //fix per un fake leak di pthread
 			}
 
 			write(clientskt, "OK \n", BUFFSIZE);
@@ -321,21 +322,26 @@ static void* clientHandler(void *arg) {
 			deregisterClient(freepos);
 			decrementaClientConnessi();
 			decrementaThreadAttivi();
-			pthread_exit(NULL);
+			return NULL; //fix per un fake leak di pthread
 		} else {
 			if (freepos == -1) sendError(clientskt, name, "Impossibile istanziare altri thread"); //non dovrebbe mai succedere
-			else if (freepos == -2) sendError(clientskt, name, "Nome già registrato"); 	
+			else if (freepos == -2) sendError(clientskt, name, "Nome già registrato");
+
+			free(name);
+			free(buff);
+			close(clientskt);
 			decrementaThreadAttivi();
-			pthread_exit(NULL);
+			return NULL; //fix per un fake leak di pthread
+			//pthread_cancel_init (unwind-forcedunwind.c:52)
+			//https://stackoverflow.com/questions/9951891/c-cleanup-unused-threads
 		}
 	} else {
 		sendError(clientskt, "<non iniz.>", "Comando non riconosciuto");
 
 		free(buff);
 		close(clientskt);
-
 		decrementaThreadAttivi();
-		pthread_exit(NULL);
+		return NULL; //fix per un fake leak di pthread
 	}
 }
 
