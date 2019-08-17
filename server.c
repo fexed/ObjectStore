@@ -45,10 +45,10 @@ int checkClient(char* name) {
 		if (clients[i] == NULL && freepos == -1) {
 			freepos = i;
 			registerClient(name, freepos);
-			i = MAXTHREADS; //uscita dal for
+			i = MAXTHREADS;
 		} else if (clients[i] != NULL) if (strcmp(name, clients[i]) == 0) return -2;
 	}
-	return freepos; //-1: pieno, -2: cliente già registrato
+	return freepos; /*-1: pieno, -2: cliente già registrato*/
 }
 
 void deregisterClient(int freepos) {
@@ -138,6 +138,7 @@ static void* clientHandler(void *arg) {
 	size_t datalen;
 	struct stat filestat;
 	FILE* file;
+	char strvalue[10];
 
 	mask_sign();
 	pthread_detach(pthread_self());
@@ -149,7 +150,7 @@ static void* clientHandler(void *arg) {
 
 		close(clientskt);
 		decrementaThreadAttivi();
-		return NULL; //fix per un fake leak di pthread
+		return NULL; /*fix per un fake leak di pthread*/
 	}
 
 	recv(clientskt, buff, BUFFSIZE, MSG_WAITALL);
@@ -164,7 +165,7 @@ static void* clientHandler(void *arg) {
 			free(buff);
 			close(clientskt);
 			decrementaThreadAttivi();
-			return NULL; //fix per un fake leak di pthread
+			return NULL; /*fix per un fake leak di pthread*/
 		}
 
 		name = strcpy(name, strtok_r(NULL, " ", &savetoken));
@@ -185,7 +186,7 @@ static void* clientHandler(void *arg) {
 				free(header);
 				free(dirname);
 				decrementaThreadAttivi();
-				return NULL; //fix per un fake leak di pthread
+				return NULL; /*fix per un fake leak di pthread*/
 			}
 
 			write(clientskt, "OK \n", BUFFSIZE);
@@ -269,7 +270,6 @@ static void* clientHandler(void *arg) {
 						buff = calloc(BUFFSIZE, sizeof(char));
 						memset(buff, 0, BUFFSIZE);
 						buff = strcpy(buff, "DATA ");
-						char strvalue[10];
 						sprintf(strvalue, "%ld", datalen);
 						buff = strcat(buff, strvalue);
 						buff = strcat(buff, " \n");
@@ -321,18 +321,18 @@ static void* clientHandler(void *arg) {
 			deregisterClient(freepos);
 			decrementaClientConnessi();
 			decrementaThreadAttivi();
-			return NULL; //fix per un fake leak di pthread
+			return NULL; /*fix per un fake leak di pthread*/
 		} else {
-			if (freepos == -1) sendError(clientskt, name, "Impossibile istanziare altri thread"); //non dovrebbe mai succedere
+			if (freepos == -1) sendError(clientskt, name, "Impossibile istanziare altri thread"); /*non dovrebbe mai succedere*/
 			else if (freepos == -2) sendError(clientskt, name, "Nome già registrato");
 
 			free(name);
 			free(buff);
 			close(clientskt);
 			decrementaThreadAttivi();
-			return NULL; //fix per un fake leak di pthread
-			//pthread_cancel_init (unwind-forcedunwind.c:52)
-			//https://stackoverflow.com/questions/9951891/c-cleanup-unused-threads
+			return NULL; /*fix per un fake leak di pthread*/
+			/*pthread_cancel_init (unwind-forcedunwind.c:52)*/
+			/*https://stackoverflow.com/questions/9951891/c-cleanup-unused-threads*/
 		}
 	} else {
 		sendError(clientskt, "<non iniz.>", "Comando non riconosciuto");
@@ -340,7 +340,7 @@ static void* clientHandler(void *arg) {
 		free(buff);
 		close(clientskt);
 		decrementaThreadAttivi();
-		return NULL; //fix per un fake leak di pthread
+		return NULL; /*fix per un fake leak di pthread*/
 	}
 }
 

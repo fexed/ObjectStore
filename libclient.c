@@ -50,6 +50,7 @@ int os_connect(char *name){
 int os_store(char *name, void *block, size_t len) {
 	char *buff = calloc(BUFFSIZE, sizeof(char));
 	int value;
+	char strvalue[10];
 
 	if (buff == NULL) {
 		printf("Errore: generazione del messaggio di memorizzazione di %s fallita\n", name);
@@ -59,7 +60,6 @@ int os_store(char *name, void *block, size_t len) {
 	buff = strcpy(buff, "STORE ");
 	buff = strcat(buff, name);
 	buff = strcat(buff, " ");
-	char strvalue[10];
 	sprintf(strvalue, "%ld", len);
 	buff = strcat(buff, strvalue);
 	buff = strcat(buff, " \n");

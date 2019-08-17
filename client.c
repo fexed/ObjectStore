@@ -15,6 +15,7 @@ void report(char *type) {
 void testSTORE() {
 	int i, j, n, len;
 	char *substr, *name;
+	char strvalue[10];
 
 	len = 100;
 	for (i = 0; i < 20; i++) {
@@ -27,11 +28,10 @@ void testSTORE() {
 		}
 
 		name = malloc(sizeof(len)+4);
-		char strvalue[10];
+		
 		sprintf(strvalue, "%d", (int)len);
 		name = strcpy(name, strvalue);
 		name = strcat(name, "Byte");
-
 		n = os_store(name, substr, strlen(substr));
 
 		if (n == 0) successi++;
@@ -50,6 +50,7 @@ void testRETRIEVE() {
 	int i, j, n, len;
 	char *substr, *name;
 	char *data;
+	char strvalue[10];
 
 	len = 100;
 	for (i = 0; i < 20; i++) {
@@ -61,7 +62,6 @@ void testRETRIEVE() {
 		}
 
 		name = malloc(sizeof(len)+4);
-		char strvalue[10];
 		sprintf(strvalue, "%d", (int)len);
 		name = strcpy(name, strvalue);
 		name = strcat(name, "Byte");
@@ -85,6 +85,7 @@ void testRETRIEVE() {
 void testDELETE() {
 	int i, j, n, len;
 	char *substr, *name;
+	char strvalue[10];
 
 	len = 100;
 	for (i = 0; i < 20; i++) {
@@ -96,7 +97,6 @@ void testDELETE() {
 		}
 
 		name = malloc(sizeof(len)+4);
-		char strvalue[10];
 		sprintf(strvalue, "%d", (int)len);
 		name = strcpy(name, strvalue);
 		name = strcat(name, "Byte");
@@ -137,4 +137,5 @@ int main(int argc, char *argv[]) {
 			return 0;
 		}
 	}
+	return 0;
 }
