@@ -24,7 +24,7 @@ volatile sig_atomic_t signaled;
 int skt, sktAccepted;
 struct sockaddr_un skta;
 struct sigaction s;
-pthread_t threadpool[MAXTHREADS];
+pthread_t threadt;
 char* clients[MAXTHREADS];
 
 int clientConnessi, oggettiMemorizzati, storeTotalSize, threads;
@@ -396,8 +396,8 @@ int main () {
 		listen(skt, SOMAXCONN);
 		sktAccepted = accept(skt, NULL, 0);
 		if (threads < MAXTHREADS) {
-			retval = pthread_create(&threadpool[threads], NULL, *clientHandler, (void *)sktAccepted);
-			//TODO fix                          ^^^^^^^
+			retval = pthread_create(&threadt, NULL, *clientHandler, (void *)sktAccepted);
+			pthread_detach(threadt);
 			if (retval != 0) sendError(sktAccepted, "<non connesso>", "Impossibile istanziare il thread");
 		} else {
 			sendError(sktAccepted, "<non connesso>", "Troppi thread connessi");
