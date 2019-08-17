@@ -143,31 +143,38 @@ static void* clientHandler(void *arg) {
 	FILE* file;
 
 	mask_sign();
+	pthread_detach(pthread_self());
 	incrementaThreadAttivi();
-	name = calloc(BUFFSIZE, sizeof(char));
-	name = memset(name, 0, BUFFSIZE);
+	
 	buff = calloc(BUFFSIZE, sizeof(char));
-	buff = memset(buff, 0, BUFFSIZE);
-	recv(clientskt, buff, BUFFSIZE, MSG_WAITALL);
-	header = strtok_r(buff, "\n", &savetoken);
-
-	if (name == NULL || buff == NULL) {
-		sendError(clientskt, name, "Inizializzazione del thread fallita");
+	if (buff == NULL) {
+		sendError(clientskt, "<non iniz.>", "Inizializzazione del thread fallita");
 
 		close(clientskt);
 		decrementaThreadAttivi();
 		pthread_exit(NULL);
 	}
 
+	recv(clientskt, buff, BUFFSIZE, MSG_WAITALL);
+	header = strtok_r(buff, "\n", &savetoken);
+
 	if (header != NULL && strstr(header, "REGISTER") != NULL) {
 		strtok_r(buff, " ", &savetoken);
+		name = calloc(BUFFSIZE, sizeof(char));
+		if (name == NULL) {
+			sendError(clientskt, "<non iniz.>", "Inizializzazione del thread fallita");
+
+			close(clientskt);
+			decrementaThreadAttivi();
+			pthread_exit(NULL);
+		}
+
 		name = strcpy(name, strtok_r(NULL, " ", &savetoken));
 
 		pthread_mutex_lock(&clientsCheck);
 		freepos = checkClient(name);
 		pthread_mutex_unlock(&clientsCheck);
 		if (freepos >= 0) {
-			//registerClient(name, freepos);
 			dirname = malloc(sizeof(name)+sizeof("data/"));
 			dirname = strcpy(dirname, "data/");
 			dirname = strcat(dirname, name);
@@ -321,7 +328,7 @@ static void* clientHandler(void *arg) {
 			pthread_exit(NULL);
 		}
 	} else {
-		sendError(clientskt, name, "Comando non riconosciuto");
+		sendError(clientskt, "<non iniz.>", "Comando non riconosciuto");
 
 		free(buff);
 		close(clientskt);
@@ -397,7 +404,6 @@ int main () {
 		sktAccepted = accept(skt, NULL, 0);
 		if (threads < MAXTHREADS) {
 			retval = pthread_create(&threadt, NULL, *clientHandler, (void *)sktAccepted);
-			pthread_detach(threadt);
 			if (retval != 0) sendError(sktAccepted, "<non connesso>", "Impossibile istanziare il thread");
 		} else {
 			sendError(sktAccepted, "<non connesso>", "Troppi thread connessi");
