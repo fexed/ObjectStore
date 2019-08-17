@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -pedantic -g
+CFLAGS = -Wall -Wextra -pedantic -g -std=c99
 LDFLAGS = -L.
 
 all : server client
