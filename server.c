@@ -23,7 +23,6 @@
 volatile sig_atomic_t signaled;
 int skt, sktAccepted;
 struct sockaddr_un skta;
-struct sigaction s;
 pthread_t threadt;
 char* clients[MAXTHREADS];
 
@@ -363,6 +362,7 @@ static void signalHandler(int signum) {
 
 int startupserver() {
 	int retval, i;
+	struct sigaction s;
 
 	memset(&s, 0, sizeof(s));
 	s.sa_handler = signalHandler;
