@@ -35,7 +35,6 @@ static pthread_mutex_t oggettiMemorizzatiMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t storeTotalSizeMutex = PTHREAD_MUTEX_INITIALIZER;
 
 void registerClient(char* name, int freepos) {
-	free(clients[freepos]);
 	clients[freepos] = calloc(strlen(name)+1, sizeof(char));
 	strcpy(clients[freepos], name);
 }
@@ -44,7 +43,7 @@ int checkClient(char* name) {
 	int i;
 	int freepos = -1;
 	for (i = 0; i < MAXTHREADS; i++) {
-		if (strcmp(clients[i], "__NULL__") == 0 && freepos == -1) {
+		if (clients[i] == NULL && freepos == -1) {
 			freepos = i;
 			registerClient(name, freepos);
 			i = MAXTHREADS; //uscita dal for
@@ -56,8 +55,7 @@ int checkClient(char* name) {
 void deregisterClient(int freepos) {
 	pthread_mutex_lock(&clientsCheck);
 	free(clients[freepos]);
-	clients[freepos] = calloc(strlen("__NULL__")+1, sizeof(char));
-	strcpy(clients[freepos], "__NULL__");
+	clients[freepos] = NULL;
 	pthread_mutex_unlock(&clientsCheck);
 }
 
@@ -164,6 +162,7 @@ static void* clientHandler(void *arg) {
 		if (name == NULL) {
 			sendError(clientskt, "<non iniz.>", "Inizializzazione del thread fallita");
 
+			free(buff);
 			close(clientskt);
 			decrementaThreadAttivi();
 			pthread_exit(NULL);
@@ -175,13 +174,15 @@ static void* clientHandler(void *arg) {
 		freepos = checkClient(name);
 		pthread_mutex_unlock(&clientsCheck);
 		if (freepos >= 0) {
-			dirname = malloc(sizeof(name)+sizeof("data/"));
+			dirname = calloc(strlen(name)+strlen("data/")+1, sizeof(char));
 			dirname = strcpy(dirname, "data/");
 			dirname = strcat(dirname, name);
 
 			value = mkdir(dirname, 0700);
 			if (value != 0 && errno != EEXIST) {
 				sendError(clientskt, name, strerror(errno));
+				free(buff);
+				free(header);
 				free(dirname);
 				decrementaThreadAttivi();
 				pthread_exit(NULL);
@@ -323,7 +324,7 @@ static void* clientHandler(void *arg) {
 			pthread_exit(NULL);
 		} else {
 			if (freepos == -1) sendError(clientskt, name, "Impossibile istanziare altri thread"); //non dovrebbe mai succedere
-			else if (freepos == -2) sendError(clientskt, name, "Nome già registrato");
+			else if (freepos == -2) sendError(clientskt, name, "Nome già registrato"); 	
 			decrementaThreadAttivi();
 			pthread_exit(NULL);
 		}
@@ -385,8 +386,7 @@ int startupserver() {
 
 	for (i = 0; i < MAXTHREADS; i++) {
 		free(clients[i]);
-		clients[i] = calloc(strlen("__NULL__")+1, sizeof(char));
-		strcpy(clients[i], "__NULL__");
+		clients[i] = NULL;
 	}
 
 	return retval;
