@@ -21,25 +21,34 @@ void testSTORE() {
 	for (i = 0; i < 20; i++) {
 		testtotali++;
 		substr = malloc(len);
-		memset(substr, 0, len);
-		substr = strcpy(substr, payload);
-		for (n = 0; n < i; n++) {
-			for (j = 0; j < 52; j++) substr = strcat(substr, payload);
+		if (substr == NULL) {
+			printf("Errore allocazione substr");
+			fallimenti++;
+		} else {
+			memset(substr, 0, len);
+			substr = strcpy(substr, payload);
+			for (n = 0; n < i; n++) {
+				for (j = 0; j < 52; j++) substr = strcat(substr, payload);
+			}
+
+			name = malloc(sizeof(len)+4);
+			if (name == NULL) {
+				printf("Errore allocazione nome");
+				fallimenti++;
+			} else {
+				sprintf(strvalue, "%d", (int)len);
+				name = strcpy(name, strvalue);
+				name = strcat(name, "Byte");
+				n = os_store(name, substr, strlen(substr));
+
+				if (n == 0) successi++;
+				else fallimenti++;
+
+				len += 5200;
+				free(substr);
+				free(name);
+			}
 		}
-
-		name = malloc(sizeof(len)+4);
-		
-		sprintf(strvalue, "%d", (int)len);
-		name = strcpy(name, strvalue);
-		name = strcat(name, "Byte");
-		n = os_store(name, substr, strlen(substr));
-
-		if (n == 0) successi++;
-		else fallimenti++;
-
-		len += 5200;
-		free(substr);
-		free(name);
 	}
 
 	os_disconnect();
@@ -56,26 +65,36 @@ void testRETRIEVE() {
 	for (i = 0; i < 20; i++) {
 		testtotali++;
 		substr = malloc(len);
-		substr = strcpy(substr, payload);
-		for (n = 0; n < i; n++) {
-			for (j = 0; j < 52; j++) substr = strcat(substr, payload);
+		if (substr == NULL) {
+			printf("Errore allocazione substr");
+			fallimenti++;
+		} else {
+			substr = strcpy(substr, payload);
+			for (n = 0; n < i; n++) {
+				for (j = 0; j < 52; j++) substr = strcat(substr, payload);
+			}
+
+			name = malloc(sizeof(len)+4);
+			if (name == NULL) {
+				printf("Errore allocazione nome");
+				fallimenti++;
+			} else {
+				sprintf(strvalue, "%d", (int)len);
+				name = strcpy(name, strvalue);
+				name = strcat(name, "Byte");
+
+				data = (char*)os_retrieve(name);
+				if (data != NULL) n = strcmp((char*)substr, data);
+				else n = -1;
+
+				if (n == 0) successi++;
+				else fallimenti++;
+
+				len += 5200;
+				free(substr);
+				free(name);
+			}
 		}
-
-		name = malloc(sizeof(len)+4);
-		sprintf(strvalue, "%d", (int)len);
-		name = strcpy(name, strvalue);
-		name = strcat(name, "Byte");
-
-		data = (char*)os_retrieve(name);
-		if (data != NULL) n = strcmp((char*)substr, data);
-		else n = -1;
-
-		if (n == 0) successi++;
-		else fallimenti++;
-
-		len += 5200;
-		free(substr);
-		free(name);
 	}
 
 	os_disconnect();
@@ -84,31 +103,30 @@ void testRETRIEVE() {
 
 void testDELETE() {
 	int i, j, n, len;
-	char *substr, *name;
+	char *name;
 	char strvalue[10];
 
 	len = 100;
 	for (i = 0; i < 20; i++) {
 		testtotali++;
-		substr = malloc(len);
-		substr = strcpy(substr, payload);
-		for (n = 0; n < i; n++) {
-			for (j = 0; j < 52; j++) substr = strcat(substr, payload);
-		}
 
 		name = malloc(sizeof(len)+4);
-		sprintf(strvalue, "%d", (int)len);
-		name = strcpy(name, strvalue);
-		name = strcat(name, "Byte");
+		if (name == NULL) {
+				printf("Errore allocazione nome");
+				fallimenti++;
+		} else {
+			sprintf(strvalue, "%d", (int)len);
+			name = strcpy(name, strvalue);
+			name = strcat(name, "Byte");
 
-		n = os_delete(name);
+			n = os_delete(name);
 
-		if (n == 0) successi++;
-		else fallimenti++;
+			if (n == 0) successi++;
+			else fallimenti++;
 
-		len += 5200;
-		free(substr);
-		free(name);
+			len += 5200;
+			free(name);
+		}
 	}
 
 	os_disconnect();
