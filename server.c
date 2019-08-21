@@ -33,22 +33,25 @@ static pthread_mutex_t threadAttiviMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t oggettiMemorizzatiMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t storeTotalSizeMutex = PTHREAD_MUTEX_INITIALIZER;
 
-void registerClient(char* name, int freepos) {
+int registerClient(char* name, int freepos) {
 	clients[freepos] = calloc(strlen(name)+1, sizeof(char));
+	if (clients[freepos] == NULL) return -3;
 	strcpy(clients[freepos], name);
+	return 0;
 }
 
 int checkClient(char* name) {
-	int i;
+	int i, n;
 	int freepos = -1;
 	for (i = 0; i < MAXTHREADS; i++) {
 		if (clients[i] == NULL && freepos == -1) {
 			freepos = i;
-			registerClient(name, freepos);
+			n = registerClient(name, freepos);
+			if (n != 0) freepos = n;
 			i = MAXTHREADS;
 		} else if (clients[i] != NULL) if (strcmp(name, clients[i]) == 0) return -2;
 	}
-	return freepos; /*-1: pieno, -2: cliente già registrato*/
+	return freepos; /*-1: pieno, -2: cliente già registrato, -3 errore alloc*/
 }
 
 void deregisterClient(int freepos) {
@@ -175,6 +178,14 @@ static void* clientHandler(void *arg) {
 		pthread_mutex_unlock(&clientsCheck);
 		if (freepos >= 0) {
 			dirname = calloc(strlen(name)+strlen("data/")+1, sizeof(char));
+			if (dirname == NULL) {
+				sendError(clientskt, name, "Inizializzazione del thread fallita");
+				free(name);
+				free(buff);
+				free(header);
+				decrementaThreadAttivi();
+				return NULL; /*fix per un fake leak di pthread*/
+			}
 			dirname = strcpy(dirname, "data/");
 			dirname = strcat(dirname, name);
 
@@ -268,22 +279,25 @@ static void* clientHandler(void *arg) {
 							} else {
 								fread(&datalen, sizeof(size_t), 1, file);
 								datavalue = calloc(1, datalen);
-								memset(datavalue, 0, datalen);
-								fread(datavalue, datalen, 1, file);
-								fclose(file);
-								free(filename);
+								if (datavalue == NULL) {
+									sendError(clientskt, name, "Errore allocazione buffer spedizione");
+								} else {
+									fread(datavalue, datalen, 1, file);
+									fclose(file);
+									free(filename);
 
-								free(buff);
-								buff = calloc(BUFFSIZE, sizeof(char));
-								memset(buff, 0, BUFFSIZE);
-								buff = strcpy(buff, "DATA ");
-								sprintf(strvalue, "%ld", datalen);
-								buff = strcat(buff, strvalue);
-								buff = strcat(buff, " \n");
+									free(buff);
+									buff = calloc(BUFFSIZE, sizeof(char));
+									memset(buff, 0, BUFFSIZE);
+									buff = strcpy(buff, "DATA ");
+									sprintf(strvalue, "%ld", datalen);
+									buff = strcat(buff, strvalue);
+									buff = strcat(buff, " \n");
 
-								write(clientskt, buff, BUFFSIZE);
-								write(clientskt, datavalue, datalen);
-								free(datavalue);
+									write(clientskt, buff, BUFFSIZE);
+									write(clientskt, datavalue, datalen);
+									free(datavalue);
+								}
 							}
 						}
 					} else if (strcmp(header, "DELETE") == 0) {
@@ -337,6 +351,7 @@ static void* clientHandler(void *arg) {
 		} else {
 			if (freepos == -1) sendError(clientskt, name, "Impossibile istanziare altri thread"); /*non dovrebbe mai succedere*/
 			else if (freepos == -2) sendError(clientskt, name, "Nome già registrato");
+			else if (freepos == -3) sendError(clientskt, name, "Errore registrazione nome, alloc");
 
 			free(name);
 			free(buff);
