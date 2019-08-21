@@ -43,7 +43,7 @@ void testSTORE() {
 				name = strcat(name, "Byte");
 				n = os_store(name, substr, strlen(substr));
 
-				if (n == 0) successi++;
+				if (n == true) successi++;
 				else fallimenti++;
 
 				len += 5258;
@@ -93,7 +93,7 @@ void testRETRIEVE() {
 				if (data != NULL) n = strcmp((char*)substr, data);
 				else n = -1;
 
-				if (n == 0) successi++;
+				if (n == true) successi++;
 				else fallimenti++;
 
 				len += 5258;
@@ -129,7 +129,7 @@ void testDELETE() {
 
 			n = os_delete(name);
 
-			if (n == 0) successi++;
+			if (n == true) successi++;
 			else fallimenti++;
 
 			len += 5258;

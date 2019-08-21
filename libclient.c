@@ -40,10 +40,12 @@ int os_connect(char *name){
 	if (value != 0) {
 		strtok(buff, " ");
 		printf("%s\n", strtok(NULL, "\n"));
+		free(buff);
+		return false;
+	} else {
+		free(buff);
+		return true;
 	}
-
-	free(buff);
-	return value;
 }
 
 int os_store(char *name, void *block, size_t len) {
@@ -78,10 +80,12 @@ int os_store(char *name, void *block, size_t len) {
 	if (value != 0) {
 		strtok(buff, " ");
 		printf("%s\n", strtok(NULL, "\n"));
+		free(buff);
+		return false;
+	} else {
+		free(buff);
+		return true;
 	}
-
-	free(buff);
-	return value;
 }
 
 void *os_retrieve(char *name) {
@@ -138,10 +142,12 @@ int os_delete(char *name) {
 	if (value != 0) {
 		strtok(buff, " ");
 		printf("%s\n", strtok(NULL, "\n"));
+		free(buff);
+		return false;
+	} else {
+		free(buff);
+		return true;
 	}
-
-	free(buff);
-	return value;
 }
 
 int os_disconnect() {
