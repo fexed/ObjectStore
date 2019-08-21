@@ -28,7 +28,6 @@ int os_connect(char *name){
 		printf("Errore: generazione del messaggio di registrazione fallita\n");
 		return -1;
 	}
-	buff = memset(buff, 0, BUFFSIZE);
 	buff = strcpy(buff, "REGISTER ");
 	buff = strcat(buff, name);
 	buff = strcat(buff, " \n");
@@ -56,7 +55,6 @@ int os_store(char *name, void *block, size_t len) {
 		printf("Errore: generazione del messaggio di memorizzazione di %s fallita\n", name);
 		return -1;
 	}
-	buff = memset(buff, 0, BUFFSIZE);
 	buff = strcpy(buff, "STORE ");
 	buff = strcat(buff, name);
 	buff = strcat(buff, " ");
@@ -68,8 +66,10 @@ int os_store(char *name, void *block, size_t len) {
 	
 	free(buff);
 	buff = calloc(BUFFSIZE, sizeof(char));
-	buff = memset(buff, 0, BUFFSIZE);
-
+	if (buff == NULL) {
+		printf("Errore: alloc del messaggio di conferma di %s fallita\n", name);
+		return -1;
+	}
 	write(skt, block, len);
 
 	read(skt, buff, BUFFSIZE);
@@ -105,12 +105,14 @@ void *os_retrieve(char *name) {
 
 	if(strcmp(header, "DATA") == 0) {
 		len = atoi(strtok(NULL, " "));
-		datavalue = calloc(len, sizeof(char));
+		datavalue = calloc(len+1, sizeof(char));
 
 		recv(skt, datavalue, len, MSG_WAITALL);
+		free(buff);
 		return datavalue;
 	} else {
 		printf("%s\n", strtok(NULL, "\n"));
+		free(buff);
 		return NULL;
 	}
 }
@@ -138,6 +140,7 @@ int os_delete(char *name) {
 		printf("%s\n", strtok(NULL, "\n"));
 	}
 
+	free(buff);
 	return value;
 }
 

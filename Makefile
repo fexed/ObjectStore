@@ -31,10 +31,10 @@ test :
 	@./testsum.sh
 
 bigtest :
-	./bigtest.sh
+	@./bigtest.sh
 
 dupobjtest :
-	./scripttest_oggettiduplicati.sh
+	@./scripttest_oggettiduplicati.sh
 
 dupclntest :
-	./scripttest_utentiduplicati.sh
+	@./scripttest_utentiduplicati.sh
