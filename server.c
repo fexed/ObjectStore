@@ -196,123 +196,135 @@ static void* clientHandler(void *arg) {
 			do {
 				free(buff);
 				buff = calloc(BUFFSIZE, sizeof(char));
-				buff = memset(buff, 0, BUFFSIZE);
-				recv(clientskt, buff, BUFFSIZE, MSG_WAITALL);
+				if (buff == NULL) {
+					sendError(clientskt, name, "Errore allocazione buffer");
+					online = 1;
+				} else {
+					recv(clientskt, buff, BUFFSIZE, MSG_WAITALL);
 
-				header = strtok_r(buff, " ", &savetoken);
-				if (strcmp(header, "STORE") == 0) {
-					dataname = strtok_r(NULL, " ", &savetoken);
-					header = strtok_r(NULL, " ", &savetoken);
-					datalen = strtol(header, (char **) NULL, 10);
-					if (errno == EINVAL || errno == ERANGE) {
-						buff = calloc(BUFFSIZE, sizeof(char));
-						memset(buff, 0, BUFFSIZE);
-						buff = strcpy(buff, "KO Errore: ");
-						buff = strcat(buff, strerror(errno));
-						buff = strcat(buff, " \n");
-						write(clientskt, buff, BUFFSIZE);
-						} else {
-						datavalue = malloc(datalen);
-						datavalue = memset(datavalue, 0, datalen);
-						recv(clientskt, datavalue, datalen, MSG_WAITALL);
-
-						filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
-						filename = memset(filename, 0, sizeof(char)*(strlen(dirname)+strlen(dataname)+2));
-						filename = strcpy(filename, dirname);
-						filename = strcat(filename, "/");
-						filename = strcat(filename, dataname);
-						value = stat(filename, &filestat);
-						if (value == 0) {
-							free(filename);
-							free(datavalue);
-							sendError(clientskt, name, "File già esistente");
-						} else {
-
-							file = fopen(filename, "w");
-							if (file == NULL) {
-								free(filename);
-								free(datavalue);
-								sendError(clientskt, name, strerror(errno));
+					header = strtok_r(buff, " ", &savetoken);
+					if (strcmp(header, "STORE") == 0) {
+						dataname = strtok_r(NULL, " ", &savetoken);
+						header = strtok_r(NULL, " ", &savetoken);
+						datalen = strtol(header, (char **) NULL, 10);
+						if (errno == EINVAL || errno == ERANGE) {
+							sendError(clientskt, name, strerror(errno));
 							} else {
-								fwrite(&datalen, sizeof(size_t), 1, file);
-								fwrite(datavalue, sizeof(char), datalen, file);
-								fclose(file);
-								free(filename);
-								free(datavalue);
-								write(clientskt, "OK \n", BUFFSIZE);
-								incrementaStoreTotalSize((int) datalen);
-								incrementaOggettiMemorizzati();
+							datavalue = calloc(datalen, sizeof(char));
+
+							if (datavalue == NULL) {
+								sendError(clientskt, name, "Errore allocazione buffer per i dati");
+							} else {
+								recv(clientskt, datavalue, datalen, MSG_WAITALL);
+
+								filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
+								if (filename == NULL) {
+									sendError(clientskt, name, "Errore allocazione buffer");
+								} else {
+									filename = strcpy(filename, dirname);
+									filename = strcat(filename, "/");
+									filename = strcat(filename, dataname);
+									value = stat(filename, &filestat);
+									if (value == 0) {
+										free(filename);
+										free(datavalue);
+										sendError(clientskt, name, "File già esistente");
+									} else {
+
+										file = fopen(filename, "w");
+										if (file == NULL) {
+											free(filename);
+											free(datavalue);
+											sendError(clientskt, name, strerror(errno));
+										} else {
+											fwrite(&datalen, sizeof(size_t), 1, file);
+											fwrite(datavalue, sizeof(char), datalen, file);
+											fclose(file);
+											free(filename);
+											free(datavalue);
+											write(clientskt, "OK \n", BUFFSIZE);
+											incrementaStoreTotalSize((int) datalen);
+											incrementaOggettiMemorizzati();
+										}
+									}
+								}
 							}
 						}
-					}
-				} else if (strcmp(header, "RETRIEVE") == 0) {
-					dataname = strtok_r(NULL, " ", &savetoken);
+					} else if (strcmp(header, "RETRIEVE") == 0) {
+						dataname = strtok_r(NULL, " ", &savetoken);
 
-					filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
-					filename = memset(filename, 0, sizeof(char)*(strlen(dirname)+strlen(dataname)+2));
-					filename = strcpy(filename, dirname);
-					filename = strcat(filename, "/");
-					filename = strcat(filename, dataname);
-					file = fopen(filename, "r");
-
-					if (file == NULL) {
-						free(filename);
-						sendError(clientskt, name, strerror(errno));
-					} else {
-						fread(&datalen, sizeof(size_t), 1, file);
-						datavalue = calloc(1, datalen);
-						memset(datavalue, 0, datalen);
-						fread(datavalue, datalen, 1, file);
-						fclose(file);
-						free(filename);
-
-						free(buff);
-						buff = calloc(BUFFSIZE, sizeof(char));
-						memset(buff, 0, BUFFSIZE);
-						buff = strcpy(buff, "DATA ");
-						sprintf(strvalue, "%ld", datalen);
-						buff = strcat(buff, strvalue);
-						buff = strcat(buff, " \n");
-
-						write(clientskt, buff, BUFFSIZE);
-						write(clientskt, datavalue, datalen);
-						free(datavalue);
-					}
-				} else if (strcmp(header, "DELETE") == 0) {
-					dataname = strtok_r(NULL, " ", &savetoken);
-
-					filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
-					filename = memset(filename, 0, sizeof(char)*(strlen(dirname)+strlen(dataname)+2));
-					filename = strcpy(filename, dirname);
-					filename = strcat(filename, "/");
-					filename = strcat(filename, dataname);
-
-					file = fopen(filename, "r");
-					if (file != NULL) {
-						fread(&datalen, sizeof(size_t), 1, file);
-						fclose(file);
-						value = remove(filename);
-						free(filename);
-
-						if (value == 0) {
-							write(clientskt, "OK \n", BUFFSIZE);
-							decrementaStoreTotalSize((int) datalen);
-							decrementaOggettiMemorizzati();
+						filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
+						if (filename == NULL) {
+							sendError(clientskt, name, "Errore allocazione buffer");
 						} else {
-							sendError(clientskt, name, strerror(errno));
-						}
-					} else {
-						free(filename);
-						sendError(clientskt, name, strerror(errno));
-					}
-				} else if (strstr(header, "LEAVE") != NULL) {
-					write(clientskt, "OK \n", BUFFSIZE);
+							filename = strcpy(filename, dirname);
+							filename = strcat(filename, "/");
+							filename = strcat(filename, dataname);
+							file = fopen(filename, "r");
 
-					free(dirname);
-					free(name);
-					online = 0;
-				} else {
-					sendError(clientskt, name, "Comando non riconosciuto");
+							if (file == NULL) {
+								free(filename);
+								sendError(clientskt, name, strerror(errno));
+							} else {
+								fread(&datalen, sizeof(size_t), 1, file);
+								datavalue = calloc(1, datalen);
+								memset(datavalue, 0, datalen);
+								fread(datavalue, datalen, 1, file);
+								fclose(file);
+								free(filename);
+
+								free(buff);
+								buff = calloc(BUFFSIZE, sizeof(char));
+								memset(buff, 0, BUFFSIZE);
+								buff = strcpy(buff, "DATA ");
+								sprintf(strvalue, "%ld", datalen);
+								buff = strcat(buff, strvalue);
+								buff = strcat(buff, " \n");
+
+								write(clientskt, buff, BUFFSIZE);
+								write(clientskt, datavalue, datalen);
+								free(datavalue);
+							}
+						}
+					} else if (strcmp(header, "DELETE") == 0) {
+						dataname = strtok_r(NULL, " ", &savetoken);
+
+						filename = calloc(strlen(dirname)+strlen(dataname)+2, sizeof(char));
+						if (filename == NULL) {
+							sendError(clientskt, name, "Errore allocazione buffer");
+						} else {
+							filename = strcpy(filename, dirname);
+							filename = strcat(filename, "/");
+							filename = strcat(filename, dataname);
+
+							file = fopen(filename, "r");
+							if (file != NULL) {
+								fread(&datalen, sizeof(size_t), 1, file);
+								fclose(file);
+								value = remove(filename);
+								free(filename);
+
+								if (value == 0) {
+									write(clientskt, "OK \n", BUFFSIZE);
+									decrementaStoreTotalSize((int) datalen);
+									decrementaOggettiMemorizzati();
+								} else {
+									sendError(clientskt, name, strerror(errno));
+								}
+							} else {
+								free(filename);
+								sendError(clientskt, name, strerror(errno));
+							}
+						}
+					} else if (strstr(header, "LEAVE") != NULL) {
+						write(clientskt, "OK \n", BUFFSIZE);
+
+						free(dirname);
+						free(name);
+						online = 0;
+					} else {
+						sendError(clientskt, name, "Comando non riconosciuto");
+					}
 				}
 			} while(online == 1);
 
